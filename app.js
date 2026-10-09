@@ -114,22 +114,14 @@ function renderTabContent(tab) {
     }
     return;
   } else if (tab === 'security') {
-    main.innerHTML = breadcrumb + `
-      <div class="space-y-3">
-        <div class="learnable border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] p-4" data-learnable="security-policy">
-          <h3 class="text-sm font-semibold mb-1"><i class="fa fa-shield text-gh-500"></i> Security policy</h3>
-          <p class="text-xs text-gh-500">如何负责任地报告安全漏洞</p>
-        </div>
-        <div class="learnable border border-[#ddf4ff] dark:border-[#1f6feb33] bg-[#ddf4ff] dark:bg-[#0d2944] rounded-md p-4" data-learnable="security-advisories">
-          <h3 class="text-sm font-semibold mb-1 text-[#0969da] dark:text-[#58a6ff]">📢 Security advisories</h3>
-          <p class="text-xs text-gh-700 dark:text-[#c9d1d9]">私下讨论并修复安全问题</p>
-        </div>
-        <div class="learnable border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] p-4" data-learnable="dependabot">
-          <h3 class="text-sm font-semibold mb-1">🤖 Dependabot</h3>
-          <p class="text-xs text-gh-500">自动检测依赖漏洞并提 PR 更新</p>
-        </div>
-      </div>
-    `;
+    if (view.level === 1 || !view.params.feature) {
+      renderSecurityList(main, breadcrumb);
+    } else if (view.level === 2) {
+      renderSecurityFeature(main, breadcrumb, view.params.feature);
+    } else if (view.level >= 3) {
+      renderSecurityAlert(main, breadcrumb, view.params.feature, view.params.vuln);
+    }
+    return;
   } else if (tab === 'insights') {
     main.innerHTML = breadcrumb + `
       <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] p-6">
@@ -483,6 +475,7 @@ function defaultData() {
   return {
     workflows: JSON.parse(JSON.stringify(WORKFLOWS)),
     projects: JSON.parse(JSON.stringify(PROJECTS)),
+    security: JSON.parse(JSON.stringify(SECURITY)),
     repo: {
       name: 'my-first-repo',
       description: '我的第一个仓库 · 用来学习 GitHub 基础操作',
@@ -1478,6 +1471,153 @@ function renderProjectCard(main, breadcrumb, projectId, cardId) {
   $('#gotoIssue')?.addEventListener('click', e => {
     e.preventDefault();
     navigate('issues', 2, { id: e.currentTarget.dataset.issueId });
+  });
+}
+
+// ============ Security Tab ============
+function renderSecurityList(main, breadcrumb) {
+  main.innerHTML = breadcrumb + `
+    <div class="space-y-3">
+      ${data.security.map(f => {
+        const alertCount = f.alerts ? f.alerts.filter(a => !a.resolved).length : 0;
+        const isPolicy = f.id === 'policy';
+        return `
+        <button class="nav-to-feature w-full flex items-center gap-3 p-4 border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] hover:border-[#0969da] dark:hover:border-[#58a6ff] text-left" data-feature="${f.id}">
+          <i class="fa ${f.icon} text-xl w-5 ${isPolicy ? 'text-gh-500' : 'text-[#0969da] dark:text-[#58a6ff]'}"></i>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-semibold">${escapeHtml(f.name)}</div>
+            <div class="text-xs text-gh-500 mt-0.5">${escapeHtml(f.desc)}</div>
+          </div>
+          ${isPolicy
+            ? `<span class="label ${f.enabled ? 'label-green' : 'label-yellow'}">${f.enabled ? '已启用' : '未启用'}</span>`
+            : `<span class="label ${alertCount > 0 ? 'label-red' : 'label-green'}">${alertCount} 个 alert</span>`}
+          <i class="fa fa-chevron-right text-gh-400 text-xs"></i>
+        </button>
+      `;}).join('')}
+    </div>
+  `;
+  $$('.nav-to-feature').forEach(b => b.addEventListener('click', () => {
+    navigate('security', 2, { feature: b.dataset.feature });
+  }));
+}
+
+function renderSecurityFeature(main, breadcrumb, featureId) {
+  const f = data.security.find(x => x.id === featureId);
+  if (!f) { main.innerHTML = '<p>功能不存在</p>'; return; }
+  view.params = { feature: featureId };
+  let body = '';
+  if (featureId === 'policy') {
+    body = `
+      <div class="prose prose-sm max-w-none dark:prose-invert">
+        <pre class="font-mono text-xs bg-gh-50 dark:bg-[#0d1117] p-4 rounded overflow-x-auto">${escapeHtml(f.content)}</pre>
+      </div>
+    `;
+  } else {
+    // dependabot / code-scanning: alert 列表
+    body = `
+      <ul class="divide-y divide-gh-200 dark:divide-[#30363d]">
+        ${f.alerts.map(a => {
+          const sevClass = a.severity === 'critical' ? 'label-red'
+            : a.severity === 'high' ? 'label-red'
+            : a.severity === 'medium' ? 'label-yellow' : 'label-blue';
+          return `
+            <li>
+              <a href="#" class="nav-to-vuln flex items-center gap-3 p-3 hover:bg-gh-50 dark:hover:bg-[#161b22] ${a.resolved ? 'opacity-50' : ''}" data-vuln="${a.id}">
+                <span class="label ${sevClass}">${a.severity}</span>
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm font-semibold">${escapeHtml(a.summary)}</div>
+                  <div class="text-xs text-gh-500 mt-0.5 font-mono">
+                    ${a.package ? `${escapeHtml(a.package)} ${escapeHtml(a.vulnerableVersion)} → ${escapeHtml(a.fixVersion)}` : `${escapeHtml(a.file)}:${a.line} · ${escapeHtml(a.rule)}`}
+                  </div>
+                </div>
+                ${a.resolved ? '<span class="label label-green">已解决</span>' : '<i class="fa fa-chevron-right text-gh-400 text-xs"></i>'}
+              </a>
+            </li>
+          `;
+        }).join('')}
+      </ul>
+    `;
+  }
+  main.innerHTML = breadcrumb + `
+    <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117]">
+      <div class="p-4 border-b border-gh-200 dark:border-[#30363d]">
+        <h2 class="text-lg font-semibold"><i class="fa ${f.icon} text-gh-500"></i> ${escapeHtml(f.name)}</h2>
+        <p class="text-xs text-gh-500 mt-1">${escapeHtml(f.desc)}</p>
+      </div>
+      <div>${body}</div>
+    </div>
+  `;
+  if (featureId !== 'policy') {
+    $$('.nav-to-vuln').forEach(a => a.addEventListener('click', e => {
+      e.preventDefault();
+      navigate('security', 3, { feature: featureId, vuln: a.dataset.vuln });
+    }));
+  }
+}
+
+function renderSecurityAlert(main, breadcrumb, featureId, vulnId) {
+  const f = data.security.find(x => x.id === featureId);
+  if (!f || !f.alerts) { main.innerHTML = '<p>功能不存在</p>'; return; }
+  const alert = f.alerts.find(a => String(a.id) === String(vulnId));
+  if (!alert) { main.innerHTML = '<p>alert 不存在</p>'; return; }
+  view.params = { feature: featureId, vuln: vulnId };
+  const sevClass = alert.severity === 'critical' || alert.severity === 'high' ? 'label-red'
+    : alert.severity === 'medium' ? 'label-yellow' : 'label-blue';
+  main.innerHTML = breadcrumb + `
+    <div class="space-y-4">
+      <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117]">
+        <div class="p-4 border-b border-gh-200 dark:border-[#30363d]">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="label ${sevClass}">${alert.severity}</span>
+            ${alert.cve ? `<span class="label label-blue font-mono">${escapeHtml(alert.cve)}</span>` : ''}
+            ${alert.resolved ? '<span class="label label-green">已解决</span>' : ''}
+          </div>
+          <h2 class="text-lg font-semibold">${escapeHtml(alert.summary)}</h2>
+        </div>
+        <div class="p-4 space-y-3 text-sm">
+          ${alert.package ? `
+          <div>
+            <h3 class="text-xs font-semibold text-gh-500 uppercase mb-1">受影响的包</h3>
+            <p><code>${escapeHtml(alert.package)}</code> ${escapeHtml(alert.vulnerableVersion)}</p>
+          </div>
+          <div>
+            <h3 class="text-xs font-semibold text-gh-500 uppercase mb-1">修复版本</h3>
+            <p><code>${escapeHtml(alert.fixVersion)}</code></p>
+          </div>
+          ` : `
+          <div>
+            <h3 class="text-xs font-semibold text-gh-500 uppercase mb-1">位置</h3>
+            <p><code>${escapeHtml(alert.file)}:${alert.line}</code></p>
+          </div>
+          <div>
+            <h3 class="text-xs font-semibold text-gh-500 uppercase mb-1">规则</h3>
+            <p><code>${escapeHtml(alert.rule)}</code></p>
+          </div>
+          `}
+          <div>
+            <h3 class="text-xs font-semibold text-gh-500 uppercase mb-1">引用</h3>
+            <a href="${escapeHtml(alert.fixUrl)}" target="_blank" rel="noopener" class="text-[#0969da] hover:underline">${escapeHtml(alert.fixUrl)}</a>
+          </div>
+        </div>
+        <div class="p-4 border-t border-gh-200 dark:border-[#30363d] flex justify-end">
+          ${alert.resolved
+            ? `<button id="reopenAlert" class="btn btn-secondary text-xs"><i class="fa fa-undo"></i> 重新打开</button>`
+            : `<button id="resolveAlert" class="btn btn-primary text-xs"><i class="fa fa-check"></i> 标记为已解决</button>`}
+        </div>
+      </div>
+    </div>
+  `;
+  $('#resolveAlert')?.addEventListener('click', () => {
+    alert.resolved = true;
+    saveData();
+    showToast('已标记为已解决', 'success');
+    navigate('security', 3, { feature: featureId, vuln: vulnId });
+  });
+  $('#reopenAlert')?.addEventListener('click', () => {
+    alert.resolved = false;
+    saveData();
+    showToast('已重新打开', 'info');
+    navigate('security', 3, { feature: featureId, vuln: vulnId });
   });
 }
 

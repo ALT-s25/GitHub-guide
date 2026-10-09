@@ -643,3 +643,83 @@ jobs:
     ],
   },
 ];
+
+// ============ Security 演示数据 ============
+const SECURITY = [
+  {
+    id: 'policy',
+    name: 'Security policy',
+    icon: 'fa-shield',
+    enabled: true,
+    desc: '如何负责任地报告安全漏洞',
+    content: `# Security Policy
+
+## Supported Versions
+
+| Version | Supported          |
+| ------- | ------------------ |
+| 1.0.x   | :white_check_mark: |
+
+## Reporting a Vulnerability
+
+如果您发现安全漏洞，请发送邮件到 **security@example.com**，不要在公开 issue 中报告。
+
+我们会在 48 小时内回复。`,
+  },
+  {
+    id: 'dependabot',
+    name: 'Dependabot alerts',
+    icon: 'fa-bell',
+    enabled: true,
+    desc: '自动检测依赖漏洞并提 PR',
+    alerts: [
+      {
+        id: 1, severity: 'critical', package: 'lodash',
+        vulnerableVersion: '< 4.17.21', fixVersion: '4.17.21',
+        summary: 'Prototype pollution in lodash',
+        cve: 'CVE-2021-23337',
+        resolved: false,
+        fixUrl: 'https://github.com/lodash/lodash/pull/5085',
+      },
+      {
+        id: 2, severity: 'high', package: 'axios',
+        vulnerableVersion: '< 0.21.2', fixVersion: '0.21.2',
+        summary: 'SSRF in axios',
+        cve: 'CVE-2021-3749',
+        resolved: false,
+        fixUrl: 'https://github.com/axios/axios/pull/3414',
+      },
+      {
+        id: 3, severity: 'medium', package: 'minimatch',
+        vulnerableVersion: '< 3.0.5', fixVersion: '3.0.5',
+        summary: 'ReDoS in minimatch',
+        cve: 'CVE-2022-3517',
+        resolved: true,
+        fixUrl: 'https://github.com/isaacs/minimatch/pull/54',
+      },
+    ],
+  },
+  {
+    id: 'code-scanning',
+    name: 'Code scanning',
+    icon: 'fa-search',
+    enabled: true,
+    desc: '用 CodeQL 扫描代码找漏洞',
+    alerts: [
+      {
+        id: 4, severity: 'high', file: 'app.js',
+        line: 1024, rule: 'js/sql-injection',
+        summary: 'Potential SQL injection from user input',
+        resolved: false,
+        fixUrl: 'https://codeql.github.com/',
+      },
+      {
+        id: 5, severity: 'low', file: 'utils.js',
+        line: 42, rule: 'js/weak-crypto',
+        summary: 'Use of weak cryptographic algorithm (MD5)',
+        resolved: false,
+        fixUrl: 'https://docs.github.com/code-security',
+      },
+    ],
+  },
+];
