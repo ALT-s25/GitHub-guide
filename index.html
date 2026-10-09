@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GitHub 新手探索站 · 边点边学</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">
+<script>
+tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        gh: {
+          // GitHub 风格的灰色系
+          50: '#f6f8fa', 100: '#eaeef2', 200: '#d0d7de', 300: '#afb8c1',
+          400: '#8c959f', 500: '#6e7781', 600: '#57606a', 700: '#424a53',
+          800: '#32383f', 900: '#24292f',
+        }
+      },
+      fontFamily: {
+        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace']
+      }
+    }
+  }
+}
+</script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; font-size: 14px; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #d0d7de; border-radius: 4px; }
+  .dark ::-webkit-scrollbar-thumb { background: #444c56; }
+
+  /* GitHub 风格按钮 */
+  .btn { display: inline-flex; align-items: center; gap: 4px; padding: 3px 12px; font-size: 14px; font-weight: 500; line-height: 20px; border-radius: 6px; border: 1px solid; cursor: pointer; transition: 0.1s; white-space: nowrap; }
+  .btn-primary { background: #1f883d; color: #fff; border-color: rgba(31,35,40,0.15); }
+  .btn-primary:hover { background: #1a7f37; }
+  .btn-secondary { background: #f6f8fa; color: #24292f; border-color: #d0d7de; }
+  .btn-secondary:hover { background: #f3f4f6; }
+  .btn-danger { background: #cf222e; color: #fff; border-color: rgba(31,35,40,0.15); }
+  .btn-danger:hover { background: #a40e26; }
+  .btn-ghost { background: transparent; color: #24292f; border-color: transparent; }
+  .btn-ghost:hover { background: #f3f4f6; }
+  .dark .btn-primary { background: #238636; }
+  .dark .btn-primary:hover { background: #2ea043; }
+  .dark .btn-secondary { background: #21262d; color: #c9d1d9; border-color: #373e47; }
+  .dark .btn-secondary:hover { background: #30363d; }
+  .dark .btn-ghost { background: transparent; color: #c9d1d9; }
+  .dark .btn-ghost:hover { background: #21262d; }
+
+  /* 可点击元素 */
+  .learnable { cursor: pointer; position: relative; transition: all 0.15s; }
+  .learnable:hover { outline: 2px solid #0969da; outline-offset: 1px; border-radius: 4px; }
+  .learnable:hover::after {
+    content: 'i'; position: absolute; top: -8px; right: -8px;
+    width: 18px; height: 18px; background: #0969da; color: white;
+    border-radius: 50%; font-size: 12px; font-weight: bold;
+    display: flex; align-items: center; justify-content: center;
+    font-family: serif; font-style: italic;
+  }
+  .dark .learnable:hover { outline-color: #58a6ff; }
+  .dark .learnable:hover::after { background: #58a6ff; }
+
+  /* 任务勾选 */
+  .task-item.done .task-text { color: #6e7781; text-decoration: line-through; }
+  .dark .task-item.done .task-text { color: #8b949e; }
+  .task-item.done { opacity: 0.7; }
+
+  /* 命令块 */
+  .code-block { background: #f6f8fa; border: 1px solid #e1e4e8; border-radius: 6px; padding: 12px 16px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; }
+  .dark .code-block { background: #0d1117; border-color: #30363d; color: #c9d1d9; }
+  .code-block .prompt { color: #6e7781; user-select: none; }
+  .code-block .cmd { color: #0550ae; }
+  .dark .code-block .cmd { color: #79c0ff; }
+  .code-block .comment { color: #6e7781; font-style: italic; }
+
+  /* 弹窗动画 */
+  .modal-backdrop { animation: fadeIn 0.2s; }
+  .modal-content { animation: slideUp 0.25s; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* 标签徽章 */
+  .label { display: inline-block; padding: 0 7px; font-size: 12px; font-weight: 500; line-height: 18px; border-radius: 2em; border: 1px solid transparent; }
+  .label-green { background: #dafbe1; color: #1a7f37; border-color: rgba(31,35,40,0.15); }
+  .label-red { background: #ffebe9; color: #cf222e; border-color: rgba(31,35,40,0.15); }
+  .label-blue { background: #ddf4ff; color: #0969da; border-color: rgba(31,35,40,0.15); }
+  .label-yellow { background: #fff8c5; color: #9a6700; border-color: rgba(31,35,40,0.15); }
+  .label-purple { background: #fbefff; color: #8250df; border-color: rgba(31,35,40,0.15); }
+  .dark .label-green { background: rgba(46,160,67,0.15); color: #3fb950; border-color: rgba(46,160,67,0.4); }
+  .dark .label-red { background: rgba(248,81,73,0.15); color: #f85149; border-color: rgba(248,81,73,0.4); }
+  .dark .label-blue { background: rgba(56,139,253,0.15); color: #58a6ff; border-color: rgba(56,139,253,0.4); }
+  .dark .label-yellow { background: rgba(187,128,9,0.15); color: #d29922; border-color: rgba(187,128,9,0.4); }
+  .dark .label-purple { background: rgba(163,113,247,0.15); color: #d2a8ff; border-color: rgba(163,113,247,0.4); }
+
+  /* 进度条 */
+  .progress-fill { transition: width 0.5s ease; }
+
+  /* 抽屉 - 默认 Tailwind hidden 直接 display:none */
+
+  /* tab 激活 */
+  .tab-active { color: #24292f; border-bottom-color: #fd8c73 !important; font-weight: 600; }
+  .dark .tab-active { color: #c9d1d9; }
+
+  /* GitHub 风格头像 */
+  .avatar { border-radius: 50%; }
+
+  /* 闪烁提示 */
+  .pulse-dot { animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+</style>
+
+<!-- Tailwind safelist -->
+<div style="display:none" aria-hidden="true">
+  <span class="bg-blue-50 bg-blue-100 bg-blue-500 bg-blue-600 text-blue-500 text-blue-600 border-blue-500"></span>
+  <span class="bg-green-50 bg-green-100 bg-green-500 bg-green-600 text-green-500 text-green-600 border-green-500"></span>
+  <span class="bg-red-50 bg-red-100 bg-red-500 bg-red-600 text-red-500 text-red-600 border-red-500"></span>
+  <span class="bg-yellow-50 bg-yellow-100 bg-yellow-500 text-yellow-600 border-yellow-500"></span>
+  <span class="bg-purple-50 bg-purple-100 bg-purple-500 text-purple-600 border-purple-500"></span>
+  <span class="bg-slate-50 bg-slate-100 bg-slate-500 bg-slate-600 bg-slate-700 bg-slate-800 bg-slate-900 text-slate-400 text-slate-500 text-slate-600 text-slate-700 border-slate-500"></span>
+</div>
+</head>
+<body class="bg-white dark:bg-[#0d1117] text-[#24292f] dark:text-[#c9d1d9] transition-colors">
+
+<!-- ========== 模拟 GitHub 顶部导航 ========== -->
+<header class="bg-[#24292f] dark:bg-[#010409] border-b border-[#444c56]">
+  <div class="max-w-screen-2xl mx-auto px-4 h-16 flex items-center gap-4">
+    <!-- Logo -->
+    <a href="#" class="learnable flex items-center gap-2 text-white pr-2" data-learnable="logo">
+      <i class="fa fa-github text-3xl"></i>
+    </a>
+
+    <!-- 主导航（悬停展开下拉菜单） -->
+    <nav class="flex items-center gap-1 text-sm font-semibold text-white/80">
+      <div class="dropdown relative group">
+        <a href="#" class="learnable px-3 py-2 rounded-md hover:bg-white/10 inline-block" data-learnable="nav-product">Product <i class="fa fa-caret-down text-xs ml-1"></i></a>
+        <div class="hidden group-hover:block absolute left-0 top-full pt-1 z-30 w-56">
+          <div class="bg-white dark:bg-[#161b22] rounded-md shadow-lg border border-gh-200 dark:border-[#30363d] py-2 text-gh-700 dark:text-gh-200">
+            <a href="#" class="learnable block px-4 py-2 hover:bg-gh-100 dark:hover:bg-[#21262d] text-sm" data-learnable="nav-product-repo"><i class="fa fa-book text-gh-500 w-5"></i> 代码托管（Repo）</a>
+            <a href="#" class="learnable block px-4 py-2 hover:bg-gh-100 dark:hover:bg-[#21262d] text-sm" data-learnable="nav-product-actions"><i class="fa fa-play text-gh-500 w-5"></i> Actions 自动化</a>
+            <a href="#" class="learnable block px-4 py-2 hover:bg-gh-100 dark:hover:bg-[#21262d] text-sm" data-learnable="nav-product-copilot"><i class="fa fa-magic text-gh-500 w-5"></i> Copilot AI</a>
+            <hr class="my-1 border-gh-200 dark:border-[#30363d]">
+            <a href="#" class="learnable block px-4 py-2 hover:bg-gh-100 dark:hover:bg-[#21262d] text-sm" data-learnable="nav-product-security"><i class="fa fa-shield text-gh-500 w-5"></i> 安全扫描</a>
+          </div>
+        </div>
+      </div>
+      <div class="dropdown relative group">
+        <a href="#" class="learnable px-3 py-2 rounded-md hover:bg-white/10 inline-block" data-learnable="nav-solutions">Solutions <i class="fa fa-caret-down text-xs ml-1"></i></a>
+        <div class="hidden group-hover:block absolute left-0 top-full pt-1 z-30 w-56">
+          <div class="bg-white dark:bg-[#161b22] rounded-md shadow-lg border border-gh-200 dark:border-[#30363d] py-2 text-gh-700 dark:text-gh-200">
+            <a href="#" class="learnable block px-4 py-2 hover:bg-gh-100 dark:hover:bg-[#21262d] text-sm" data-learnable="nav-sol-team"><i class="fa fa-users text-gh-500 w-5"></i> 团队协作</a>
+            <a href="#" class="learnable block px-4 py-2 hover:bg-gh-100 dark:hover:bg-[#21262d] text-sm" data-learnable="nav-sol-edu"><i class="fa fa-graduation-cap text-gh-500 w-5"></i> 教育</a>
+            <a href="#" class="learnable block px-4 py-2 hover:bg-gh-100 dark:hover:bg-[#21262d] text-sm" data-learnable="nav-sol-game"><i class="fa fa-gamepad text-gh-500 w-5"></i> 游戏开发</a>
+          </div>
+        </div>
+      </div>
+      <div class="dropdown relative group">
+        <a href="#" class="learnable px-3 py-2 rounded-md hover:bg-white/10 inline-block" data-learnable="nav-resources">Resources <i class="fa fa-caret-down text-xs ml-1"></i></a>
+        <div class="hidden group-hover:block absolute left-0 top-full pt-1 z-30 w-56">
+          <div class="bg-white dark:bg-[#161b22] rounded-md shadow-lg border border-gh-200 dark:border-[#30363d] py-2 text-gh-700 dark:text-gh-200">
+            <a href="#" class="learnable block px-4 py-2 hover:bg-gh-100 dark:hover:bg-[#21262d] text-sm" data-learnable="nav-res-docs"><i class="fa fa-book text-gh-500 w-5"></i> 技术文档</a>
+            <a href="#" class="learnable block px-4 py-2 hover:bg-gh-100 dark:hover:bg-[#21262d] text-sm" data-learnable="nav-res-blog"><i class="fa fa-newspaper-o text-gh-500 w-5"></i> 官方博客</a>
+            <a href="#" class="learnable block px-4 py-2 hover:bg-gh-100 dark:hover:bg-[#21262d] text-sm" data-learnable="nav-res-community"><i class="fa fa-comments text-gh-500 w-5"></i> 社区论坛</a>
+            <a href="#" class="learnable block px-4 py-2 hover:bg-gh-100 dark:hover:bg-[#21262d] text-sm" data-learnable="nav-res-skills"><i class="fa fa-graduation-cap text-gh-500 w-5"></i> Skills 互动课</a>
+          </div>
+        </div>
+      </div>
+      <div class="dropdown relative group">
+        <a href="#" class="learnable px-3 py-2 rounded-md hover:bg-white/10 inline-block" data-learnable="nav-open-source">Open Source <i class="fa fa-caret-down text-xs ml-1"></i></a>
+        <div class="hidden group-hover:block absolute left-0 top-full pt-1 z-30 w-56">
+          <div class="bg-white dark:bg-[#161b22] rounded-md shadow-lg border border-gh-200 dark:border-[#30363d] py-2 text-gh-700 dark:text-gh-200">
+            <a href="#" class="learnable block px-4 py-2 hover:bg-gh-100 dark:hover:bg-[#21262d] text-sm" data-learnable="nav-os-explore"><i class="fa fa-compass text-gh-500 w-5"></i> Explore</a>
+            <a href="#" class="learnable block px-4 py-2 hover:bg-gh-100 dark:hover:bg-[#21262d] text-sm" data-learnable="nav-os-topics"><i class="fa fa-tag text-gh-500 w-5"></i> Topics 话题</a>
+            <a href="#" class="learnable block px-4 py-2 hover:bg-gh-100 dark:hover:bg-[#21262d] text-sm" data-learnable="nav-os-trending"><i class="fa fa-fire text-gh-500 w-5"></i> Trending 趋势</a>
+          </div>
+        </div>
+      </div>
+      <div class="dropdown relative group">
+        <a href="#" class="learnable px-3 py-2 rounded-md hover:bg-white/10 inline-block" data-learnable="nav-enterprise">Enterprise <i class="fa fa-caret-down text-xs ml-1"></i></a>
+        <div class="hidden group-hover:block absolute right-0 top-full pt-1 z-30 w-56">
+          <div class="bg-white dark:bg-[#161b22] rounded-md shadow-lg border border-gh-200 dark:border-[#30363d] py-2 text-gh-700 dark:text-gh-200">
+            <a href="#" class="learnable block px-4 py-2 hover:bg-gh-100 dark:hover:bg-[#21262d] text-sm" data-learnable="nav-ent-platform"><i class="fa fa-building text-gh-500 w-5"></i> 企业平台</a>
+            <a href="#" class="learnable block px-4 py-2 hover:bg-gh-100 dark:hover:bg-[#21262d] text-sm" data-learnable="nav-ent-security"><i class="fa fa-lock text-gh-500 w-5"></i> 企业级安全</a>
+            <a href="#" class="learnable block px-4 py-2 hover:bg-gh-100 dark:hover:bg-[#21262d] text-sm" data-learnable="nav-ent-ai"><i class="fa fa-rocket text-gh-500 w-5"></i> Enterprise AI</a>
+          </div>
+        </div>
+      </div>
+      <a href="#" class="learnable px-3 py-2 rounded-md hover:bg-white/10" data-learnable="nav-pricing">Pricing</a>
+    </nav>
+
+    <!-- 搜索框 -->
+    <div class="flex-1 max-w-2xl ml-4">
+      <div class="learnable relative" data-learnable="search">
+        <input type="text" placeholder="Search or jump to..." class="w-full pl-9 pr-3 py-1.5 text-sm rounded-md bg-[#24292f] dark:bg-[#0d1117] border border-[#444c56] text-white placeholder-white/50 focus:border-white/40 focus:outline-none">
+        <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-white/50 text-sm"></i>
+        <span class="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-white/60 border border-white/30 rounded px-1.5">/</span>
+      </div>
+    </div>
+
+    <!-- 右侧操作 -->
+    <div class="flex items-center gap-1">
+      <button class="learnable w-8 h-8 rounded-md hover:bg-white/10 flex items-center justify-center text-white/80" data-learnable="notif">
+        <i class="fa fa-bell-o"></i>
+      </button>
+      <div class="relative">
+        <button id="newMenuBtn" class="learnable w-8 h-8 rounded-md hover:bg-white/10 flex items-center justify-center text-white/80" data-learnable="create">
+          <i class="fa fa-plus-square-o"></i>
+          <span class="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-[#1f883d] pulse-dot"></span>
+        </button>
+      </div>
+      <button class="learnable w-8 h-8 rounded-md hover:bg-white/10 flex items-center justify-center text-white/80" data-learnable="avatar-menu">
+        <img src="https://avatars.githubusercontent.com/u/583231?v=4" class="w-7 h-7 rounded-full" alt="me">
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ========== 第二行：面包屑 + tabs ========== -->
+<div class="border-b border-gh-200 dark:border-[#30363d] bg-white dark:bg-[#0d1117]">
+  <div class="max-w-screen-2xl mx-auto px-4">
+    <!-- 仓库头部 -->
+    <div class="py-4">
+      <div class="flex items-start justify-between gap-4 flex-wrap">
+        <div class="min-w-0">
+          <div class="flex items-center gap-2 text-2xl font-light">
+            <img src="https://avatars.githubusercontent.com/u/583231?v=4" class="learnable w-6 h-6 rounded-full" data-learnable="owner-avatar">
+            <a href="#" class="learnable font-semibold text-[#0969da] hover:underline" data-learnable="owner-name">ALT-s25</a>
+            <span class="text-gh-400">/</span>
+            <a href="#" class="learnable font-semibold text-[#0969da] hover:underline" data-learnable="repo-name">my-first-repo</a>
+            <span class="learnable text-xs font-medium border border-gh-300 dark:border-[#30363d] rounded-full px-2 py-0.5 text-gh-600 dark:text-[#8b949e]" data-learnable="visibility-badge">Public</span>
+          </div>
+          <p class="learnable text-sm text-gh-600 dark:text-[#8b949e] mt-1" data-learnable="repo-description">我的第一个仓库 · 用来学习 GitHub 基础操作</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button class="learnable btn btn-secondary" data-learnable="pin"><i class="fa fa-thumb-tack"></i> Pin</button>
+          <button class="learnable btn btn-secondary" data-learnable="watch"><i class="fa fa-eye"></i> Watch <span class="learnable text-xs ml-1 px-1.5 bg-gh-200 dark:bg-[#30363d] rounded" data-learnable="watch-count">0</span> <i class="fa fa-caret-down text-xs"></i></button>
+          <button class="learnable btn btn-secondary" data-learnable="star"><i class="fa fa-star-o"></i> Star <span class="learnable text-xs ml-1 px-1.5 bg-gh-200 dark:bg-[#30363d] rounded" data-learnable="star-count">0</span></button>
+          <button class="learnable btn btn-secondary" data-learnable="fork"><i class="fa fa-code-fork"></i> Fork <span class="learnable text-xs ml-1 px-1.5 bg-gh-200 dark:bg-[#30363d] rounded" data-learnable="fork-count">0</span></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <nav class="flex items-center gap-0 -mb-px overflow-x-auto">
+      <button class="learnable tab-btn flex items-center gap-2 px-4 py-2.5 text-sm border-b-2 border-transparent text-gh-600 dark:text-[#8b949e] hover:border-gh-300" data-tab="code" data-learnable="tab-code">
+        <i class="fa fa-code"></i> Code
+      </button>
+      <button class="learnable tab-btn flex items-center gap-2 px-4 py-2.5 text-sm border-b-2 border-transparent text-gh-600 dark:text-[#8b949e] hover:border-gh-300" data-tab="issues" data-learnable="tab-issues">
+        <i class="fa fa-exclamation-circle"></i> Issues <span class="text-xs px-1.5 rounded-full bg-gh-200 dark:bg-[#30363d]">0</span>
+      </button>
+      <button class="learnable tab-btn flex items-center gap-2 px-4 py-2.5 text-sm border-b-2 border-transparent text-gh-600 dark:text-[#8b949e] hover:border-gh-300" data-tab="pulls" data-learnable="tab-pulls">
+        <i class="fa fa-git-pull-request"></i> Pull requests <span class="text-xs px-1.5 rounded-full bg-gh-200 dark:bg-[#30363d]">0</span>
+      </button>
+      <button class="learnable tab-btn flex items-center gap-2 px-4 py-2.5 text-sm border-b-2 border-transparent text-gh-600 dark:text-[#8b949e] hover:border-gh-300" data-tab="actions" data-learnable="tab-actions">
+        <i class="fa fa-play-circle"></i> Actions
+      </button>
+      <button class="learnable tab-btn flex items-center gap-2 px-4 py-2.5 text-sm border-b-2 border-transparent text-gh-600 dark:text-[#8b949e] hover:border-gh-300" data-tab="projects" data-learnable="tab-projects">
+        <i class="fa fa-table"></i> Projects
+      </button>
+      <button class="learnable tab-btn flex items-center gap-2 px-4 py-2.5 text-sm border-b-2 border-transparent text-gh-600 dark:text-[#8b949e] hover:border-gh-300" data-tab="security" data-learnable="tab-security">
+        <i class="fa fa-shield"></i> Security <i class="fa fa-caret-down text-xs"></i>
+      </button>
+      <button class="learnable tab-btn flex items-center gap-2 px-4 py-2.5 text-sm border-b-2 border-transparent text-gh-600 dark:text-[#8b949e] hover:border-gh-300" data-tab="insights" data-learnable="tab-insights">
+        <i class="fa fa-bar-chart"></i> Insights
+      </button>
+      <button class="learnable tab-btn flex items-center gap-2 px-4 py-2.5 text-sm border-b-2 border-transparent text-gh-600 dark:text-[#8b949e] hover:border-gh-300" data-tab="settings" data-learnable="tab-settings">
+        <i class="fa fa-cog"></i> Settings
+      </button>
+    </nav>
+  </div>
+</div>
+
+<!-- ========== 主内容区 ========== -->
+<main class="max-w-screen-2xl mx-auto px-4 py-6">
+  <!-- 欢迎引导卡（首次访问显示） -->
+  <div id="welcomeCard" class="hidden mb-6 border-2 border-[#ddf4ff] dark:border-[#1f6feb55] bg-gradient-to-br from-[#ddf4ff] to-white dark:from-[#0d2944] dark:to-[#0d1117] rounded-lg p-5">
+    <div class="flex items-start gap-3">
+      <div class="text-3xl">👋</div>
+      <div class="flex-1 min-w-0">
+        <h2 class="text-lg font-semibold text-[#0969da] dark:text-[#58a6ff] mb-2">欢迎来到 GitHub 互动教学站</h2>
+        <p class="text-sm text-gh-700 dark:text-gh-300 mb-3">这是一个 <strong>真实仿真的 GitHub 页面</strong>，所有按钮、菜单、Tab 都能点。点击带 <span class="inline-block px-1.5 py-0.5 bg-[#0969da] text-white rounded-full text-[10px] font-bold italic font-serif">i</span> 标记的蓝点元素，弹出知识卡片讲解其作用。</p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+          <div class="flex items-start gap-2"><span class="text-[#1f883d] font-bold">①</span><div><strong>点上面 8 个 Tab</strong>了解 GitHub 主要页面（Code/Issues/PR/Actions 等）</div></div>
+          <div class="flex items-start gap-2"><span class="text-[#1f883d] font-bold">②</span><div><strong>点右上角侧栏</strong>查看学习清单、命令速查、推荐资源</div></div>
+          <div class="flex items-start gap-2"><span class="text-[#1f883d] font-bold">③</span><div><strong>点页面上任意文字</strong>，弹卡片解释这是干嘛的</div></div>
+        </div>
+      </div>
+      <button id="closeWelcome" title="关闭" class="text-gh-500 hover:text-[#cf222e] w-8 h-8 flex items-center justify-center rounded-md hover:bg-white/50 dark:hover:bg-[#21262d] text-xl leading-none">×</button>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
+    <!-- 左：主面板 -->
+    <div id="tabContent" class="min-w-0"></div>
+    <!-- 右：About 侧边栏 + 工具栏 -->
+    <aside class="space-y-4">
+      <!-- About -->
+      <div class="border border-gh-200 dark:border-[#30363d] rounded-md p-4 bg-white dark:bg-[#0d1117]">
+        <h2 class="learnable text-sm font-semibold mb-3" data-learnable="about-header">About</h2>
+        <p class="learnable text-sm text-gh-600 dark:text-[#8b949e] mb-3" data-learnable="about-desc">我的第一个仓库 · 用来学习 GitHub 基础操作</p>
+        <div class="space-y-1.5 text-xs">
+          <div class="learnable flex items-center gap-2" data-learnable="readme-link">
+            <i class="fa fa-book text-gh-500 w-4 text-center"></i><a href="#" class="text-[#0969da] hover:underline">Readme</a>
+          </div>
+          <div class="learnable flex items-center gap-2" data-learnable="license-link">
+            <i class="fa fa-balance-scale text-gh-500 w-4 text-center"></i><a href="#" class="text-[#0969da] hover:underline">View license</a>
+          </div>
+          <div class="learnable flex items-center gap-2" data-learnable="stars-link">
+            <i class="fa fa-star-o text-gh-500 w-4 text-center"></i><a href="#" class="text-[#0969da] hover:underline">0 stars</a>
+          </div>
+          <div class="learnable flex items-center gap-2" data-learnable="watchers-link">
+            <i class="fa fa-eye text-gh-500 w-4 text-center"></i><a href="#" class="text-[#0969da] hover:underline">0 watching</a>
+          </div>
+          <div class="learnable flex items-center gap-2" data-learnable="forks-link">
+            <i class="fa fa-code-fork text-gh-500 w-4 text-center"></i><a href="#" class="text-[#0969da] hover:underline">0 forks</a>
+          </div>
+        </div>
+        <hr class="my-3 border-gh-200 dark:border-[#30363d]">
+        <h3 class="learnable text-xs font-semibold mb-2" data-learnable="languages-header">Languages</h3>
+        <div class="learnable space-y-1" data-learnable="language-bar">
+          <div class="flex items-center gap-2 text-xs"><span class="w-2 h-2 rounded-full bg-[#f1e05a]"></span> JavaScript <span class="ml-auto text-gh-500">60%</span></div>
+          <div class="h-2 bg-gh-100 dark:bg-[#21262d] rounded-full overflow-hidden"><div class="h-full bg-[#f1e05a]" style="width:60%"></div></div>
+          <div class="flex items-center gap-2 text-xs mt-1"><span class="w-2 h-2 rounded-full bg-[#3572A5]"></span> Python <span class="ml-auto text-gh-500">30%</span></div>
+          <div class="h-2 bg-gh-100 dark:bg-[#21262d] rounded-full overflow-hidden"><div class="h-full bg-[#3572A5]" style="width:30%"></div></div>
+          <div class="flex items-center gap-2 text-xs mt-1"><span class="w-2 h-2 rounded-full bg-[#e34c26]"></span> HTML <span class="ml-auto text-gh-500">10%</span></div>
+          <div class="h-2 bg-gh-100 dark:bg-[#21262d] rounded-full overflow-hidden"><div class="h-full bg-[#e34c26]" style="width:10%"></div></div>
+        </div>
+      </div>
+
+      <!-- 工具栏 -->
+      <div class="border border-gh-200 dark:border-[#30363d] rounded-md p-3 bg-white dark:bg-[#0d1117] space-y-2">
+        <button id="openTasks" class="w-full btn btn-secondary justify-center">
+          <i class="fa fa-list-check"></i> 学习清单
+          <span id="taskBadge" class="ml-auto text-xs px-1.5 bg-gh-200 dark:bg-[#30363d] rounded">0/0</span>
+        </button>
+        <button id="openCheatsheet" class="w-full btn btn-secondary justify-center">
+          <i class="fa fa-terminal"></i> 命令速查
+        </button>
+        <button id="openResources" class="w-full btn btn-secondary justify-center">
+          <i class="fa fa-star"></i> 推荐资源
+        </button>
+        <button id="openFaq" class="w-full btn btn-secondary justify-center">
+          <i class="fa fa-question-circle"></i> 常见问题
+        </button>
+        <hr class="border-gh-200 dark:border-[#30363d]">
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-gh-500">进度</span>
+          <span id="totalPercent" class="font-semibold">0%</span>
+        </div>
+        <div class="h-2 bg-gh-100 dark:bg-[#21262d] rounded-full overflow-hidden">
+          <div id="totalProgress" class="progress-fill h-full bg-gradient-to-r from-[#1f883d] to-[#2ea043]" style="width:0%"></div>
+        </div>
+        <div class="flex items-center justify-between text-xs">
+          <button id="themeToggle" class="hover:underline">🌗 切换主题</button>
+          <button id="resetBtn" class="text-[#cf222e] hover:underline">重置进度</button>
+        </div>
+      </div>
+
+      <!-- 提示卡 -->
+      <div class="border border-[#ddf4ff] dark:border-[#1f6feb33] bg-[#ddf4ff] dark:bg-[#0d2944] rounded-md p-3 text-xs">
+        <p class="font-semibold text-[#0969da] dark:text-[#58a6ff] mb-1">💡 学习提示</p>
+        <p class="text-gh-700 dark:text-[#c9d1d9]">页面里所有 <span class="inline-block px-1.5 py-0.5 bg-[#0969da] text-white rounded-full text-[10px] font-bold italic font-serif">i</span> 标记的蓝点元素都可点击查看说明。完成左侧学习清单来跟踪你的进度。</p>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<!-- ========== 知识卡片弹窗 ========== -->
+<div id="learnModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 modal-backdrop">
+  <div class="modal-content bg-white dark:bg-[#161b22] rounded-lg shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col border border-gh-200 dark:border-[#30363d]">
+    <div class="flex items-start justify-between p-5 border-b border-gh-200 dark:border-[#30363d]">
+      <div class="flex-1 min-w-0">
+        <span id="learnCategory" class="label label-blue text-[10px] mb-2 inline-block">基础</span>
+        <h2 id="learnTitle" class="text-xl font-semibold"></h2>
+        <p class="text-[11px] text-gh-500 mt-1"><kbd class="px-1.5 py-0.5 bg-gh-100 dark:bg-[#21262d] rounded border border-gh-200 dark:border-[#30363d] text-[10px]">Esc</kbd> 关闭 · 点空白也可关闭</p>
+      </div>
+      <button id="closeModal" title="关闭 (Esc)" class="text-gh-700 dark:text-gh-300 hover:text-white w-9 h-9 flex items-center justify-center rounded-md hover:bg-[#cf222e] dark:hover:bg-[#cf222e] text-2xl leading-none transition-colors">×</button>
+    </div>
+    <div class="overflow-y-auto p-5 space-y-4">
+      <div>
+        <h3 class="text-xs font-semibold text-gh-500 uppercase mb-1.5">是什么</h3>
+        <p id="learnWhat" class="text-sm leading-relaxed"></p>
+      </div>
+      <div>
+        <h3 class="text-xs font-semibold text-gh-500 uppercase mb-1.5">怎么用</h3>
+        <p id="learnHow" class="text-sm leading-relaxed"></p>
+      </div>
+      <div id="learnTipWrap" class="hidden">
+        <h3 class="text-xs font-semibold text-gh-500 uppercase mb-1.5">💡 新手提示</h3>
+        <p id="learnTip" class="text-sm leading-relaxed text-gh-700 dark:text-[#c9d1d9]"></p>
+      </div>
+      <div id="learnWarnWrap" class="hidden">
+        <h3 class="text-xs font-semibold text-[#cf222e] uppercase mb-1.5">⚠️ 注意事项</h3>
+        <p id="learnWarn" class="text-sm leading-relaxed text-gh-700 dark:text-[#c9d1d9]"></p>
+      </div>
+    </div>
+    <div class="flex items-center justify-between p-4 border-t border-gh-200 dark:border-[#30363d] bg-gh-50 dark:bg-[#0d1117]">
+      <label class="flex items-center gap-2 text-sm cursor-pointer">
+        <input type="checkbox" id="learnMastered" class="rounded text-[#1f883d] focus:ring-[#1f883d]">
+        <span>我学会了</span>
+      </label>
+      <button id="closeModalBtn" class="btn btn-primary">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 学习清单抽屉 ========== -->
+<div id="tasksDrawer" class="fixed inset-0 z-40 hidden">
+  <div id="tasksBackdrop" class="absolute inset-0 bg-black/40"></div>
+  <div class="drawer drawer-closed absolute right-0 top-0 h-full w-full max-w-md bg-white dark:bg-[#0d1117] shadow-2xl flex flex-col">
+    <div class="flex items-center justify-between p-4 border-b border-gh-200 dark:border-[#30363d]">
+      <h2 class="font-semibold text-lg">📋 学习清单</h2>
+      <button id="closeTasks" title="关闭 (Esc)" class="text-gh-700 dark:text-gh-300 hover:text-white w-9 h-9 flex items-center justify-center rounded-md hover:bg-[#cf222e] dark:hover:bg-[#cf222e] text-2xl leading-none transition-colors">×</button>
+    </div>
+    <div class="flex-1 overflow-y-auto p-4 space-y-5" id="tasksList"></div>
+  </div>
+</div>
+
+<!-- ========== 命令速查面板 ========== -->
+<div id="cheatPanel" class="hidden fixed inset-0 z-40">
+  <div id="cheatBackdrop" class="absolute inset-0 bg-black/40"></div>
+  <div class="absolute inset-y-0 right-0 w-full max-w-3xl bg-white dark:bg-[#0d1117] shadow-2xl flex flex-col">
+    <div class="flex items-center justify-between p-4 border-b border-gh-200 dark:border-[#30363d]">
+      <h2 class="font-semibold text-lg">💻 Git 命令速查</h2>
+      <button id="closeCheat" title="关闭 (Esc)" class="text-gh-700 dark:text-gh-300 hover:text-white w-9 h-9 flex items-center justify-center rounded-md hover:bg-[#cf222e] dark:hover:bg-[#cf222e] text-2xl leading-none transition-colors">×</button>
+    </div>
+    <div class="flex-1 overflow-y-auto p-4 space-y-3" id="cheatList"></div>
+  </div>
+</div>
+
+<!-- ========== 推荐资源面板 ========== -->
+<div id="resourcesPanel" class="hidden fixed inset-0 z-40">
+  <div id="resourcesBackdrop" class="absolute inset-0 bg-black/40"></div>
+  <div class="absolute inset-y-0 right-0 w-full max-w-3xl bg-white dark:bg-[#0d1117] shadow-2xl flex flex-col">
+    <div class="flex items-center justify-between p-4 border-b border-gh-200 dark:border-[#30363d]">
+      <h2 class="font-semibold text-lg">⭐ 推荐资源</h2>
+      <button id="closeResources" title="关闭 (Esc)" class="text-gh-700 dark:text-gh-300 hover:text-white w-9 h-9 flex items-center justify-center rounded-md hover:bg-[#cf222e] dark:hover:bg-[#cf222e] text-2xl leading-none transition-colors">×</button>
+    </div>
+    <div class="flex-1 overflow-y-auto p-4 space-y-3" id="resourcesList"></div>
+  </div>
+</div>
+
+<!-- ========== FAQ 面板 ========== -->
+<div id="faqPanel" class="hidden fixed inset-0 z-40">
+  <div id="faqBackdrop" class="absolute inset-0 bg-black/40"></div>
+  <div class="absolute inset-y-0 right-0 w-full max-w-3xl bg-white dark:bg-[#0d1117] shadow-2xl flex flex-col">
+    <div class="flex items-center justify-between p-4 border-b border-gh-200 dark:border-[#30363d]">
+      <h2 class="font-semibold text-lg">❓ 常见问题 FAQ</h2>
+      <button id="closeFaq" title="关闭 (Esc)" class="text-gh-700 dark:text-gh-300 hover:text-white w-9 h-9 flex items-center justify-center rounded-md hover:bg-[#cf222e] dark:hover:bg-[#cf222e] text-2xl leading-none transition-colors">×</button>
+    </div>
+    <div class="flex-1 overflow-y-auto p-4 space-y-3" id="faqList"></div>
+  </div>
+</div>
+
+<!-- 重置确认 -->
+<div id="resetModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+  <div class="bg-white dark:bg-[#161b22] rounded-lg p-6 max-w-sm w-full shadow-2xl border border-gh-200 dark:border-[#30363d]">
+    <h3 class="font-semibold text-lg mb-2">确认重置？</h3>
+    <p class="text-sm text-gh-600 dark:text-[#8b949e] mb-4">将清除所有"已学会"标记，此操作不可恢复。</p>
+    <div class="flex gap-2 justify-end">
+      <button id="cancelReset" class="btn btn-secondary">取消</button>
+      <button id="confirmReset" class="btn btn-danger">确认重置</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="hidden fixed bottom-6 right-6 z-50 px-4 py-3 rounded-md shadow-lg text-sm text-white bg-[#24292f] dark:bg-[#161b22] border border-gh-200 dark:border-[#30363d]"></div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
