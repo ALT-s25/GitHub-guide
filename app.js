@@ -105,13 +105,14 @@ function renderTabContent(tab) {
     }
     return;
   } else if (tab === 'projects') {
-    main.innerHTML = breadcrumb + `
-      <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] p-8 text-center text-gh-500 text-sm">
-        <i class="fa fa-table text-4xl mb-2 block text-gh-300"></i>
-        还没有 Project。<br>
-        <span class="text-xs">用看板管理 issue 和 PR 进度。</span>
-      </div>
-    `;
+    if (view.level === 1 || !view.params.project) {
+      renderProjectsList(main, breadcrumb);
+    } else if (view.level === 2) {
+      renderProjectBoard(main, breadcrumb, view.params.project);
+    } else if (view.level >= 3) {
+      renderProjectCard(main, breadcrumb, view.params.project, view.params.card);
+    }
+    return;
   } else if (tab === 'security') {
     main.innerHTML = breadcrumb + `
       <div class="space-y-3">
@@ -481,6 +482,7 @@ const DATA_KEY = STORAGE_KEY + '-data';  // 'gh-guide-v1-data'
 function defaultData() {
   return {
     workflows: JSON.parse(JSON.stringify(WORKFLOWS)),
+    projects: JSON.parse(JSON.stringify(PROJECTS)),
     repo: {
       name: 'my-first-repo',
       description: '我的第一个仓库 · 用来学习 GitHub 基础操作',
@@ -603,6 +605,10 @@ function renderBreadcrumb() {
     const item = SETTINGS_ITEMS.find(s => s.id === params.setting);
     if (item) segs.push(`<span class="text-gh-700 dark:text-gh-300">${item.name}</span>`);
   }
+  if (level >= 2 && params.project && tab === 'projects') {
+    const proj = data.projects?.find(x => x.id === params.project);
+    if (proj) segs.push(`<a href="#" data-nav="proj:${params.project}" class="hover:underline">${escapeHtml(proj.name)}</a>`);
+  }
   if (level >= 3) {
     if (params.cid) segs.push(`<span class="text-gh-700 dark:text-gh-300">评论 #${params.cid}</span>`);
     if (params.sha) segs.push(`<span class="text-gh-700 dark:text-gh-300 font-mono text-xs">${params.sha.slice(0, 7)}</span>`);
@@ -617,6 +623,7 @@ function renderBreadcrumb() {
       const target = a.dataset.nav;
       if (target === 'root') navigate('code', 1, {});
       else if (target.startsWith('tab:')) navigate(target.slice(4), 1, {});
+      else if (target.startsWith('proj:')) navigate('projects', 2, { project: target.slice(5) });
     });
   });
 }
@@ -1342,5 +1349,135 @@ function renderActionRunDetail(main, breadcrumb, wfId, runId) {
     const log = $(`[data-job-log="${b.dataset.job}"]`);
     log?.classList.toggle('hidden');
   }));
+}
+
+// ============ Projects Tab ============
+function renderProjectsList(main, breadcrumb) {
+  main.innerHTML = breadcrumb + `
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      ${data.projects.map(p => `
+        <button class="nav-to-project border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] p-4 text-left hover:border-[#0969da] dark:hover:border-[#58a6ff]" data-project="${p.id}">
+          <h3 class="text-sm font-semibold mb-1"><i class="fa fa-table text-gh-500"></i> ${escapeHtml(p.name)}</h3>
+          <p class="text-xs text-gh-500 mb-3">${escapeHtml(p.desc)}</p>
+          <div class="flex items-center gap-3 text-xs text-gh-500">
+            <span><i class="fa fa-clone"></i> ${p.cardCount} cards</span>
+            <span><i class="fa fa-circle-o"></i> ${p.openIssues} issues</span>
+            <span><i class="fa fa-code-fork"></i> ${p.openPRs} PRs</span>
+          </div>
+        </button>
+      `).join('')}
+    </div>
+  `;
+  $$('.nav-to-project').forEach(b => b.addEventListener('click', () => {
+    navigate('projects', 2, { project: b.dataset.project });
+  }));
+}
+
+function renderProjectBoard(main, breadcrumb, projectId) {
+  const p = data.projects.find(x => x.id === projectId);
+  if (!p) { main.innerHTML = '<p>project 不存在</p>'; return; }
+  view.params = { project: projectId };
+  const colDefs = [
+    { key: 'todo', name: 'Todo', icon: 'fa-circle-o text-gh-400' },
+    { key: 'inProgress', name: 'In Progress', icon: 'fa-circle-o-notch text-[#bf8700]' },
+    { key: 'done', name: 'Done', icon: 'fa-check-circle text-[#1a7f37]' },
+  ];
+  main.innerHTML = breadcrumb + `
+    <div class="space-y-4">
+      <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] p-4">
+        <h2 class="text-lg font-semibold"><i class="fa fa-table text-gh-500"></i> ${escapeHtml(p.name)}</h2>
+        <p class="text-xs text-gh-500 mt-1">${escapeHtml(p.desc)}</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        ${colDefs.map(col => `
+          <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117]">
+            <div class="p-3 border-b border-gh-200 dark:border-[#30363d] flex items-center gap-2">
+              <i class="fa ${col.icon}"></i>
+              <h3 class="text-sm font-semibold">${col.name}</h3>
+              <span class="text-xs text-gh-500 ml-auto">${p.columns[col.key].length}</span>
+            </div>
+            <ul class="p-2 space-y-2 min-h-[100px]">
+              ${p.columns[col.key].map(card => `
+                <li class="border border-gh-200 dark:border-[#30363d] rounded p-2 hover:border-[#0969da] dark:hover:border-[#58a6ff]">
+                  <a href="#" class="nav-to-card block" data-card="${card.id}">
+                    <div class="text-sm font-semibold">${escapeHtml(card.title)}</div>
+                    <div class="text-xs text-gh-500 mt-1">
+                      ${card.issueId ? `<span class="label label-blue">#${card.issueId}</span> ` : ''}
+                      ${card.assignee ? `<i class="fa fa-user text-gh-400"></i> ${escapeHtml(card.assignee)}` : '<i class="fa fa-user text-gh-300"></i> 未分配'}
+                    </div>
+                  </a>
+                  <div class="flex gap-1 mt-2">
+                    ${colDefs.filter(c => c.key !== col.key).map(c => `
+                      <button class="move-card text-xs px-2 py-0.5 rounded border border-gh-200 dark:border-[#30363d] hover:bg-gh-100 dark:hover:bg-[#21262d]" data-card-id="${card.id}" data-from="${col.key}" data-to="${c.key}">→ ${c.name}</button>
+                    `).join('')}
+                  </div>
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+  $$('.nav-to-card').forEach(a => a.addEventListener('click', e => {
+    e.preventDefault();
+    navigate('projects', 3, { project: projectId, card: a.dataset.card });
+  }));
+  $$('.move-card').forEach(b => b.addEventListener('click', () => {
+    const cardId = parseInt(b.dataset.cardId, 10);
+    const from = b.dataset.from;
+    const to = b.dataset.to;
+    const idx = p.columns[from].findIndex(c => c.id === cardId);
+    if (idx === -1) return;
+    const [card] = p.columns[from].splice(idx, 1);
+    p.columns[to].push(card);
+    saveData();
+    showToast(`已移至 ${to}`, 'success');
+    navigate('projects', 2, { project: projectId });
+  }));
+}
+
+function renderProjectCard(main, breadcrumb, projectId, cardId) {
+  const p = data.projects.find(x => x.id === projectId);
+  if (!p) { main.innerHTML = '<p>project 不存在</p>'; return; }
+  const cardIdNum = parseInt(cardId, 10);
+  let card = null, cardCol = null;
+  for (const col of ['todo', 'inProgress', 'done']) {
+    const found = p.columns[col].find(c => c.id === cardIdNum);
+    if (found) { card = found; cardCol = col; break; }
+  }
+  if (!card) { main.innerHTML = '<p>卡片不存在</p>'; return; }
+  view.params = { project: projectId, card: cardId };
+  main.innerHTML = breadcrumb + `
+    <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117]">
+      <div class="p-4 border-b border-gh-200 dark:border-[#30363d]">
+        <h2 class="text-lg font-semibold"><i class="fa fa-sticky-note-o text-gh-500"></i> ${escapeHtml(card.title)}</h2>
+        <div class="text-xs text-gh-500 mt-2 flex items-center gap-3">
+          <span>所属看板：<strong>${escapeHtml(p.name)}</strong></span>
+          <span>当前列：<strong>${cardCol === 'todo' ? 'Todo' : cardCol === 'inProgress' ? 'In Progress' : 'Done'}</strong></span>
+        </div>
+      </div>
+      <div class="p-4 space-y-3">
+        <div>
+          <h3 class="text-sm font-semibold mb-1">描述</h3>
+          <p class="text-sm">${escapeHtml(card.title)} 卡片。${card.issueId ? '关联到 issue #' + card.issueId + '。' : '独立卡片。'}</p>
+        </div>
+        <div>
+          <h3 class="text-sm font-semibold mb-1">负责人</h3>
+          <p class="text-sm">${card.assignee ? escapeHtml(card.assignee) : '<span class="text-gh-500">未分配</span>'}</p>
+        </div>
+        ${card.issueId ? `
+        <div>
+          <h3 class="text-sm font-semibold mb-1">关联 Issue</h3>
+          <a href="#" id="gotoIssue" class="text-sm text-[#0969da] hover:underline" data-issue-id="${card.issueId}">#${card.issueId}</a>
+        </div>
+        ` : ''}
+      </div>
+    </div>
+  `;
+  $('#gotoIssue')?.addEventListener('click', e => {
+    e.preventDefault();
+    navigate('issues', 2, { id: e.currentTarget.dataset.issueId });
+  });
 }
 

@@ -513,6 +513,51 @@ const faqs = [
   },
 ];
 
+// ============ Projects 演示数据 ============
+const PROJECTS = [
+  {
+    id: 'v1-roadmap',
+    name: 'v1.0 路线图',
+    desc: '第一版公开发布的功能规划',
+    cardCount: 8,
+    openIssues: 3,
+    openPRs: 5,
+    columns: {
+      todo: [
+        { id: 1, title: '设计 logo', issueId: 2, assignee: 'ALT-s25' },
+        { id: 2, title: '写 README', issueId: null, assignee: 'ALT-s25' },
+        { id: 3, title: '加 LICENSE', issueId: null, assignee: null },
+      ],
+      inProgress: [
+        { id: 4, title: '修复 README 错别字', issueId: 3, assignee: 'ALT-s25' },
+        { id: 5, title: 'Add Skills 链接', issueId: 1, assignee: 'ALT-s25' },
+      ],
+      done: [
+        { id: 6, title: '初始化仓库', issueId: null, assignee: 'ALT-s25' },
+        { id: 7, title: '配置 Pages', issueId: null, assignee: 'ALT-s25' },
+      ],
+    },
+  },
+  {
+    id: 'bugs-backlog',
+    name: 'Bug Backlog',
+    desc: '待处理的 bug 与改进项',
+    cardCount: 5,
+    openIssues: 2,
+    openPRs: 0,
+    columns: {
+      todo: [
+        { id: 8, title: '页面在移动端错位', issueId: 4, assignee: null },
+      ],
+      inProgress: [],
+      done: [
+        { id: 9, title: '按钮颜色对比度不够', issueId: 5, assignee: 'ALT-s25' },
+        { id: 10, title: '搜索结果不准确', issueId: 6, assignee: 'ALT-s25' },
+      ],
+    },
+  },
+];
+
 // ============ Actions 演示数据 ============
 const WORKFLOWS = [
   {
