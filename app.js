@@ -69,49 +69,14 @@ function renderTabContent(tab) {
     ? '<div id="breadcrumb" class="text-xs text-gh-500 mb-3 px-1"></div>'
     : '';
   if (tab === 'code') {
-    main.innerHTML = breadcrumb + `
-      <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117]">
-        <!-- 文件头部 -->
-        <div class="flex items-center justify-between p-3 border-b border-gh-200 dark:border-[#30363d]">
-          <div class="learnable flex items-center gap-2 text-sm" data-learnable="branch-selector">
-            <i class="fa fa-code-branch text-gh-500"></i>
-            <span class="font-semibold">main</span>
-            <i class="fa fa-caret-down text-xs text-gh-500"></i>
-          </div>
-          <div class="flex items-center gap-2">
-            <button class="learnable btn btn-secondary text-xs" data-learnable="add-file">
-              <i class="fa fa-plus"></i> Add file
-            </button>
-            <button class="learnable btn btn-secondary text-xs" data-learnable="code-dropdown">
-              <i class="fa fa-code"></i> Code <i class="fa fa-caret-down text-xs"></i>
-            </button>
-          </div>
-        </div>
-        <!-- README 渲染 -->
-        <article class="p-6 markdown-body">
-          <h1 class="text-3xl font-semibold border-b border-gh-200 dark:border-[#30363d] pb-2 mb-4">my-first-repo 👋</h1>
-          <p class="text-gh-600 dark:text-[#8b949e] mb-4">这是我的第一个 GitHub 仓库，用来记录学习过程。</p>
-          <h2 class="text-2xl font-semibold border-b border-gh-200 dark:border-[#30363d] pb-1 mb-3 mt-6">快速开始</h2>
-          <pre class="code-block"><span class="prompt">$</span> <span class="cmd">git clone</span> git@github.com:ALT-s25/my-first-repo.git
-<span class="prompt">$</span> <span class="cmd">cd</span> my-first-repo
-<span class="prompt">$</span> <span class="cmd">echo</span> "Hello GitHub!" &gt;&gt; README.md
-<span class="prompt">$</span> <span class="cmd">git add</span> . &amp;&amp; <span class="cmd">git commit</span> -m "first commit"
-<span class="prompt">$</span> <span class="cmd">git push</span></pre>
-          <h2 class="text-2xl font-semibold border-b border-gh-200 dark:border-[#30363d] pb-1 mb-3 mt-6">学习进度</h2>
-          <ul class="list-disc list-inside space-y-1 text-sm">
-            <li>✅ 注册 GitHub 账号</li>
-            <li>⏳ 配置 SSH（进行中）</li>
-            <li>⬜ 第一次 commit</li>
-          </ul>
-          <h2 class="text-2xl font-semibold border-b border-gh-200 dark:border-[#30363d] pb-1 mb-3 mt-6">资源链接</h2>
-          <ul class="list-disc list-inside space-y-1 text-sm text-[#0969da]">
-            <li><a href="https://docs.github.com" class="hover:underline">GitHub 官方文档</a></li>
-            <li><a href="https://skills.github.com" class="hover:underline">GitHub Skills 互动课</a></li>
-            <li><a href="https://lab.github.com" class="hover:underline">GitHub Learning Lab</a></li>
-          </ul>
-        </article>
-      </div>
-    `;
+    if (view.level === 1 || !view.params.path) {
+      renderCodeList(main, breadcrumb);
+    } else if (view.level === 2) {
+      renderCodeFile(main, breadcrumb, view.params.path);
+    } else if (view.level >= 3) {
+      renderCodeHistory(main, breadcrumb, view.params.path);
+    }
+    return;
   } else if (tab === 'issues') {
     main.innerHTML = breadcrumb + `
       <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117]">
@@ -673,6 +638,9 @@ function renderBreadcrumb() {
     const title = (data.issues[params.id] || data.pulls[params.id] || data.files[params.id])?.title || data.files[params.id]?.path || `#${params.id}`;
     segs.push(`<span class="text-gh-700 dark:text-gh-300">#${params.id} ${escapeHtml(title)}</span>`);
   }
+  if (level >= 2 && params.path && tab === 'code') {
+    segs.push(`<span class="text-gh-700 dark:text-gh-300">${escapeHtml(params.path)}</span>`);
+  }
   if (level >= 3) {
     if (params.cid) segs.push(`<span class="text-gh-700 dark:text-gh-300">评论 #${params.cid}</span>`);
     if (params.sha) segs.push(`<span class="text-gh-700 dark:text-gh-300 font-mono text-xs">${params.sha.slice(0, 7)}</span>`);
@@ -704,6 +672,108 @@ function navigate(tab, level, params = {}) {
 
 function goBack() {
   if (view.level > 1) navigate(view.tab, view.level - 1, view.params);
+}
+
+// ============ Code Tab ============
+function renderCodeList(main, breadcrumb) {
+  const fileEntries = Object.values(data.files).map(f => {
+    const active = f.path === 'README.md' ? 'bg-[#ddf4ff] dark:bg-[#0d2944] text-[#0969da] dark:text-[#58a6ff] font-semibold' : 'hover:bg-gh-100 dark:hover:bg-[#161b22]';
+    return `<a href="#" class="nav-to-file ${active} block px-3 py-1.5 text-sm rounded" data-path="${f.path}">📄 ${f.path}</a>`;
+  }).join('');
+  main.innerHTML = breadcrumb + `
+    <div class="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-4">
+      <aside class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] p-2 self-start">
+        <div class="text-xs font-semibold text-gh-500 px-3 py-2 uppercase">文件</div>
+        ${fileEntries}
+      </aside>
+      <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117]">
+        <div class="flex items-center justify-between p-3 border-b border-gh-200 dark:border-[#30363d]">
+          <span class="learnable flex items-center gap-2 text-sm" data-learnable="branch-selector">
+            <i class="fa fa-code-branch text-gh-500"></i>
+            <span class="font-semibold">${escapeHtml(data.repo.defaultBranch)}</span>
+            <i class="fa fa-caret-down text-xs text-gh-500"></i>
+          </span>
+          <div class="flex items-center gap-2">
+            <button id="codeHistory" class="learnable btn btn-secondary text-xs" data-learnable="code-history"><i class="fa fa-history"></i> History</button>
+            <button class="learnable btn btn-secondary text-xs" data-learnable="add-file"><i class="fa fa-plus"></i> Add file</button>
+          </div>
+        </div>
+        <article class="p-6 markdown-body">
+          <h1 class="text-3xl font-semibold border-b border-gh-200 dark:border-[#30363d] pb-2 mb-4">my-first-repo 👋</h1>
+          <p class="text-gh-600 dark:text-[#8b949e] mb-4">这是我的第一个 GitHub 仓库，用来记录学习过程。</p>
+          <h2 class="text-2xl font-semibold border-b border-gh-200 dark:border-[#30363d] pb-1 mb-3 mt-6">快速开始</h2>
+          <pre class="code-block"><span class="prompt">$</span> <span class="cmd">git clone</span> git@github.com:ALT-s25/my-first-repo.git
+<span class="prompt">$</span> <span class="cmd">cd</span> my-first-repo
+<span class="prompt">$</span> <span class="cmd">echo</span> "Hello GitHub!" &gt;&gt; README.md
+<span class="prompt">$</span> <span class="cmd">git add</span> . &amp;&amp; <span class="cmd">git commit</span> -m "first commit"
+<span class="prompt">$</span> <span class="cmd">git push</span></pre>
+        </article>
+      </div>
+    </div>
+  `;
+  $$('.nav-to-file').forEach(a => a.addEventListener('click', e => {
+    e.preventDefault();
+    navigate('code', 2, { path: a.dataset.path });
+  }));
+  const histBtn = $('#codeHistory');
+  if (histBtn) histBtn.addEventListener('click', () => {
+    navigate('code', 3, { path: 'README.md' });
+  });
+}
+
+function renderCodeFile(main, breadcrumb, path) {
+  const file = data.files[path];
+  if (!file) { main.innerHTML = '<p>文件不存在</p>'; return; }
+  view.params = { path };
+  main.innerHTML = breadcrumb + `
+    <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117]">
+      <div class="flex items-center justify-between p-3 border-b border-gh-200 dark:border-[#30363d]">
+        <div class="text-sm">
+          <i class="fa fa-file-text-o text-gh-500"></i>
+          <span class="font-semibold ml-1">${escapeHtml(file.path)}</span>
+          <span class="text-xs text-gh-500 ml-2">${file.size} · ${file.lines} 行 · ${file.lastModified}</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="copyFile" class="btn btn-secondary text-xs"><i class="fa fa-copy"></i> Copy</button>
+          <button id="rawFile" class="btn btn-secondary text-xs">Raw</button>
+          <button id="fileHistory" class="btn btn-secondary text-xs"><i class="fa fa-history"></i> History</button>
+        </div>
+      </div>
+      <pre class="p-4 text-xs overflow-x-auto font-mono leading-relaxed">${escapeHtml(file.content)}</pre>
+    </div>
+  `;
+  $('#copyFile')?.addEventListener('click', () => { navigator.clipboard.writeText(file.content).then(() => showToast('已复制到剪贴板', 'success')); });
+  $('#rawFile')?.addEventListener('click', () => showToast('Raw 视图（演示模式）', 'info'));
+  $('#fileHistory')?.addEventListener('click', () => navigate('code', 3, { path }));
+}
+
+function renderCodeHistory(main, breadcrumb, path) {
+  const commits = data.pulls['1'].commits.concat(data.pulls['2'].commits);
+  main.innerHTML = breadcrumb + `
+    <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117]">
+      <div class="p-4 border-b border-gh-200 dark:border-[#30363d]">
+        <h2 class="text-lg font-semibold"><i class="fa fa-history text-gh-500"></i> 提交历史：${escapeHtml(path)}</h2>
+      </div>
+      <ul class="divide-y divide-gh-200 dark:divide-[#30363d]">
+        ${commits.map(c => `
+          <li class="p-4 hover:bg-gh-50 dark:hover:bg-[#161b22]">
+            <a href="#" class="nav-to-commit block" data-sha="${c.sha}" data-prid="1">
+              <div class="text-sm font-semibold text-[#0969da] hover:underline">${escapeHtml(c.title)}</div>
+              <div class="text-xs text-gh-500 mt-1">
+                <span class="font-mono">${c.sha.slice(0, 7)}</span>
+                · ${escapeHtml(c.author)}
+                · ${c.createdAt.slice(0, 10)}
+              </div>
+            </a>
+          </li>
+        `).join('')}
+      </ul>
+    </div>
+  `;
+  $$('.nav-to-commit').forEach(a => a.addEventListener('click', e => {
+    e.preventDefault();
+    navigate('pulls', 3, { id: a.dataset.prid, sha: a.dataset.sha });
+  }));
 }
 
 // ============ 启动 ============
