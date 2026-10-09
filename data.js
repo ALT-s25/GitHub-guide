@@ -723,3 +723,49 @@ const SECURITY = [
     ],
   },
 ];
+
+// ============ Insights 演示数据 ============
+const INSIGHTS = {
+  summary: {
+    commits: 12,
+    contributors: 3,
+    views: 1287,
+    clones: 34,
+    codeFrequencyAdditions: 542,
+    codeFrequencyDeletions: 128,
+  },
+  contributors: [
+    { name: 'ALT-s25', avatar: 'A', commits: 8, additions: 412, deletions: 95, color: '#1a7f37' },
+    { name: 'alice', avatar: 'a', commits: 3, additions: 102, deletions: 21, color: '#0969da' },
+    { name: 'bob', avatar: 'b', commits: 1, additions: 28, deletions: 12, color: '#8250df' },
+  ],
+  traffic: {
+    views: [
+      { day: '周一', count: 187 },
+      { day: '周二', count: 234 },
+      { day: '周三', count: 198 },
+      { day: '周四', count: 156 },
+      { day: '周五', count: 201 },
+      { day: '周六', count: 89 },
+      { day: '周日', count: 67 },
+    ],
+    clones: [
+      { day: '周一', count: 5 },
+      { day: '周二', count: 8 },
+      { day: '周三', count: 6 },
+      { day: '周四', count: 4 },
+      { day: '周五', count: 7 },
+      { day: '周六', count: 2 },
+      { day: '周日', count: 2 },
+    ],
+  },
+  commits: [
+    { sha: 'a1b2c3d', title: 'Add Skills link to README', author: 'ALT-s25', createdAt: '2026-10-08T13:55:00Z' },
+    { sha: 'e4f5g6h', title: 'typo fix', author: 'ALT-s25', createdAt: '2026-10-08T13:58:00Z' },
+    { sha: 'i7j8k9l', title: 'style: code block', author: 'ALT-s25', createdAt: '2026-10-06T10:55:00Z' },
+    { sha: 'm1n2o3p', title: 'docs: update README', author: 'alice', createdAt: '2026-10-05T15:30:00Z' },
+    { sha: 'q4r5s6t', title: 'fix: button color', author: 'ALT-s25', createdAt: '2026-10-04T09:15:00Z' },
+    { sha: 'u7v8w9x', title: 'feat: add LICENSE', author: 'bob', createdAt: '2026-10-03T14:20:00Z' },
+    { sha: 'y1z2a3b', title: 'init: project structure', author: 'ALT-s25', createdAt: '2026-10-01T11:00:00Z' },
+  ],
+};

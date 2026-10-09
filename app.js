@@ -123,29 +123,14 @@ function renderTabContent(tab) {
     }
     return;
   } else if (tab === 'insights') {
-    main.innerHTML = breadcrumb + `
-      <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] p-6">
-        <h2 class="text-lg font-semibold mb-3">📊 仓库概览</h2>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div class="border border-gh-200 dark:border-[#30363d] rounded p-3 text-center">
-            <div class="text-2xl font-bold text-[#1f883d]">7</div>
-            <div class="text-xs text-gh-500 mt-1">Commits</div>
-          </div>
-          <div class="border border-gh-200 dark:border-[#30363d] rounded p-3 text-center">
-            <div class="text-2xl font-bold text-[#0969da]">2</div>
-            <div class="text-xs text-gh-500 mt-1">Branches</div>
-          </div>
-          <div class="border border-gh-200 dark:border-[#30363d] rounded p-3 text-center">
-            <div class="text-2xl font-bold text-[#bf8700]">1</div>
-            <div class="text-xs text-gh-500 mt-1">Pull Requests</div>
-          </div>
-          <div class="border border-gh-200 dark:border-[#30363d] rounded p-3 text-center">
-            <div class="text-2xl font-bold text-[#8250df]">12</div>
-            <div class="text-xs text-gh-500 mt-1">Days active</div>
-          </div>
-        </div>
-      </div>
-    `;
+    if (view.level === 1) {
+      renderInsightsOverview(main, breadcrumb);
+    } else if (view.level === 2) {
+      renderInsightsCategory(main, breadcrumb, view.params.category);
+    } else if (view.level >= 3) {
+      renderInsightsContributor(main, breadcrumb, view.params.contributor);
+    }
+    return;
   } else if (tab === 'settings') {
     if (view.level === 1 || !view.params.setting) {
       renderSettingsList(main, breadcrumb);
@@ -1619,5 +1604,232 @@ function renderSecurityAlert(main, breadcrumb, featureId, vulnId) {
     showToast('已重新打开', 'info');
     navigate('security', 3, { feature: featureId, vuln: vulnId });
   });
+}
+
+// ============ Insights Tab ============
+function renderInsightsOverview(main, breadcrumb) {
+  const s = INSIGHTS.summary;
+  // 简易 bar chart：commits by day
+  const commitsByDay = {
+    '10/3': 1, '10/4': 1, '10/5': 1, '10/6': 1, '10/7': 0, '10/8': 2, '10/9': 0,
+  };
+  const maxBar = Math.max(...Object.values(commitsByDay), 1);
+  main.innerHTML = breadcrumb + `
+    <div class="space-y-4">
+      <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] p-6">
+        <h2 class="text-lg font-semibold mb-3"><i class="fa fa-bar-chart text-gh-500"></i> 仓库概览</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div class="border border-gh-200 dark:border-[#30363d] rounded p-3 text-center">
+            <div class="text-2xl font-bold text-[#1f883d]">${s.commits}</div>
+            <div class="text-xs text-gh-500 mt-1">Commits</div>
+          </div>
+          <div class="border border-gh-200 dark:border-[#30363d] rounded p-3 text-center">
+            <div class="text-2xl font-bold text-[#0969da]">${s.contributors}</div>
+            <div class="text-xs text-gh-500 mt-1">Contributors</div>
+          </div>
+          <div class="border border-gh-200 dark:border-[#30363d] rounded p-3 text-center">
+            <div class="text-2xl font-bold text-[#bf8700]">${s.views}</div>
+            <div class="text-xs text-gh-500 mt-1">Views (14d)</div>
+          </div>
+          <div class="border border-gh-200 dark:border-[#30363d] rounded p-3 text-center">
+            <div class="text-2xl font-bold text-[#8250df]">${s.clones}</div>
+            <div class="text-xs text-gh-500 mt-1">Clones (14d)</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] p-4">
+          <h3 class="text-sm font-semibold mb-3">Commits 趋势 (近 7 天)</h3>
+          <div class="flex items-end gap-1 h-24">
+            ${Object.entries(commitsByDay).map(([day, count]) => `
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-[#1a7f37] dark:bg-[#3fb950]" style="height: ${(count / maxBar) * 100}%; min-height: 2px"></div>
+                <div class="text-[10px] text-gh-500 mt-1">${day}</div>
+              </div>
+            `).join('')}
+          </div>
+          <button class="nav-to-insights-category w-full mt-3 text-xs text-[#0969da] hover:underline" data-category="commits">查看 commit 历史 →</button>
+        </div>
+
+        <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] p-4">
+          <h3 class="text-sm font-semibold mb-3">Code frequency</h3>
+          <div class="text-sm space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="text-[#1a7f37] w-16 text-xs">+${s.codeFrequencyAdditions}</span>
+              <div class="flex-1 h-3 bg-gh-100 dark:bg-[#21262d] rounded">
+                <div class="h-full bg-[#1a7f37] rounded" style="width: 100%"></div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-[#cf222e] w-16 text-xs">-${s.codeFrequencyDeletions}</span>
+              <div class="flex-1 h-3 bg-gh-100 dark:bg-[#21262d] rounded">
+                <div class="h-full bg-[#cf222e] rounded" style="width: ${(s.codeFrequencyDeletions / s.codeFrequencyAdditions) * 100}%"></div>
+              </div>
+            </div>
+          </div>
+          <p class="text-xs text-gh-500 mt-3">加 / 删行数（演示）</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <button class="nav-to-insights-category border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] p-4 text-left hover:border-[#0969da] dark:hover:border-[#58a6ff]" data-category="contributors">
+          <h3 class="text-sm font-semibold mb-1"><i class="fa fa-users text-[#0969da]"></i> Contributors</h3>
+          <p class="text-xs text-gh-500">${INSIGHTS.contributors.length} 位贡献者，共 ${INSIGHTS.contributors.reduce((s, c) => s + c.commits, 0)} 个 commit</p>
+        </button>
+        <button class="nav-to-insights-category border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] p-4 text-left hover:border-[#0969da] dark:hover:border-[#58a6ff]" data-category="traffic">
+          <h3 class="text-sm font-semibold mb-1"><i class="fa fa-line-chart text-[#bf8700]"></i> Traffic</h3>
+          <p class="text-xs text-gh-500">最近 7 天 views / clones</p>
+        </button>
+      </div>
+    </div>
+  `;
+  $$('.nav-to-insights-category').forEach(b => b.addEventListener('click', () => {
+    navigate('insights', 2, { category: b.dataset.category });
+  }));
+}
+
+function renderInsightsCategory(main, breadcrumb, category) {
+  let body = '';
+  let title = '';
+  if (category === 'contributors') {
+    title = 'Contributors';
+    body = `
+      <ul class="divide-y divide-gh-200 dark:divide-[#30363d]">
+        ${INSIGHTS.contributors.map(c => `
+          <li>
+            <a href="#" class="nav-to-contributor flex items-center gap-3 p-3 hover:bg-gh-50 dark:hover:bg-[#161b22]" data-name="${escapeHtml(c.name)}">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold" style="background: ${c.color}">${escapeHtml(c.avatar)}</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-semibold">${escapeHtml(c.name)}</div>
+                <div class="text-xs text-gh-500 mt-0.5">+${c.additions} / -${c.deletions} 行</div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-semibold">${c.commits}</div>
+                <div class="text-xs text-gh-500">commits</div>
+              </div>
+              <i class="fa fa-chevron-right text-gh-400 text-xs"></i>
+            </a>
+          </li>
+        `).join('')}
+      </ul>
+    `;
+  } else if (category === 'traffic') {
+    title = 'Traffic';
+    const maxView = Math.max(...INSIGHTS.traffic.views.map(v => v.count));
+    const maxClone = Math.max(...INSIGHTS.traffic.clones.map(c => c.count));
+    body = `
+      <div class="p-4 space-y-4">
+        <div>
+          <h3 class="text-sm font-semibold mb-2">Views (近 7 天)</h3>
+          <div class="flex items-end gap-1 h-20">
+            ${INSIGHTS.traffic.views.map(v => `
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-[#0969da]" style="height: ${(v.count / maxView) * 100}%; min-height: 2px" title="${v.count}"></div>
+                <div class="text-[10px] text-gh-500 mt-1">${v.day.slice(1)}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        <div>
+          <h3 class="text-sm font-semibold mb-2">Clones (近 7 天)</h3>
+          <div class="flex items-end gap-1 h-20">
+            ${INSIGHTS.traffic.clones.map(v => `
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-[#bf8700]" style="height: ${(v.count / maxClone) * 100}%; min-height: 2px" title="${v.count}"></div>
+                <div class="text-[10px] text-gh-500 mt-1">${v.day.slice(1)}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+  } else if (category === 'commits') {
+    title = 'Commit history (最近 10 个)';
+    body = `
+      <ul class="divide-y divide-gh-200 dark:divide-[#30363d]">
+        ${INSIGHTS.commits.map(c => `
+          <li class="flex items-center gap-3 p-3">
+            <i class="fa fa-commit text-gh-400"></i>
+            <div class="flex-1 min-w-0">
+              <div class="text-sm font-semibold">${escapeHtml(c.title)}</div>
+              <div class="text-xs text-gh-500 mt-0.5"><span class="font-mono">${c.sha.slice(0, 7)}</span> · ${escapeHtml(c.author)} · ${c.createdAt.slice(0, 10)}</div>
+            </div>
+          </li>
+        `).join('')}
+      </ul>
+    `;
+  } else {
+    main.innerHTML = '<p>类别不存在</p>'; return;
+  }
+  view.params = { category };
+  main.innerHTML = breadcrumb + `
+    <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117]">
+      <div class="p-4 border-b border-gh-200 dark:border-[#30363d]">
+        <h2 class="text-lg font-semibold"><i class="fa fa-bar-chart text-gh-500"></i> ${title}</h2>
+      </div>
+      <div>${body}</div>
+    </div>
+  `;
+  if (category === 'contributors') {
+    $$('.nav-to-contributor').forEach(a => a.addEventListener('click', e => {
+      e.preventDefault();
+      navigate('insights', 3, { contributor: a.dataset.name });
+    }));
+  }
+}
+
+function renderInsightsContributor(main, breadcrumb, name) {
+  const c = INSIGHTS.contributors.find(x => x.name === name);
+  if (!c) { main.innerHTML = '<p>贡献者不存在</p>'; return; }
+  view.params = { contributor: name };
+  // 简易趋势 bar
+  const trend = [1, 0, 2, 1, 0, 3, 1];
+  const maxTrend = Math.max(...trend);
+  main.innerHTML = breadcrumb + `
+    <div class="space-y-4">
+      <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] p-4">
+        <div class="flex items-center gap-3">
+          <div class="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-semibold" style="background: ${c.color}">${escapeHtml(c.avatar)}</div>
+          <div>
+            <h2 class="text-lg font-semibold">${escapeHtml(c.name)}</h2>
+            <p class="text-xs text-gh-500 mt-1">贡献者</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-3">
+        <div class="border border-gh-200 dark:border-[#30363d] rounded p-3 text-center bg-white dark:bg-[#0d1117]">
+          <div class="text-2xl font-bold">${c.commits}</div>
+          <div class="text-xs text-gh-500 mt-1">Commits</div>
+        </div>
+        <div class="border border-gh-200 dark:border-[#30363d] rounded p-3 text-center bg-white dark:bg-[#0d1117]">
+          <div class="text-2xl font-bold text-[#1a7f37]">+${c.additions}</div>
+          <div class="text-xs text-gh-500 mt-1">Additions</div>
+        </div>
+        <div class="border border-gh-200 dark:border-[#30363d] rounded p-3 text-center bg-white dark:bg-[#0d1117]">
+          <div class="text-2xl font-bold text-[#cf222e]">-${c.deletions}</div>
+          <div class="text-xs text-gh-500 mt-1">Deletions</div>
+        </div>
+      </div>
+
+      <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] p-4">
+        <h3 class="text-sm font-semibold mb-3">Commits 趋势 (近 7 天)</h3>
+        <div class="flex items-end gap-1 h-20">
+          ${trend.map((count, i) => `
+            <div class="flex-1 flex flex-col items-center">
+              <div class="w-full rounded-t" style="background: ${c.color}; height: ${(count / maxTrend) * 100}%; min-height: 2px"></div>
+              <div class="text-[10px] text-gh-500 mt-1">D${i + 1}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] p-4">
+        <h3 class="text-sm font-semibold mb-2">贡献过的仓库</h3>
+        <p class="text-xs text-gh-500">（演示）<code>my-first-repo</code> · <code>learning-notes</code></p>
+      </div>
+    </div>
+  `;
 }
 
