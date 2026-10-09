@@ -552,6 +552,110 @@ function closeTasksDrawer() {
   drawer.classList.add('hidden');
 }
 
+// ============ 状态层（详情页用）============
+const DATA_KEY = STORAGE_KEY + '-data';  // 'gh-guide-v1-data'
+
+function defaultData() {
+  return {
+    repo: {
+      name: 'my-first-repo',
+      description: '我的第一个仓库 · 用来学习 GitHub 基础操作',
+      visibility: 'public',
+      defaultBranch: 'main',
+      branchProtection: false,
+      collaborators: ['ALT-s25'],
+    },
+    issues: {
+      '1': {
+        id: 1, title: 'Welcome to your first issue!',
+        body: '这是你的第一条 issue，试试回复或关闭它。',
+        state: 'open', author: 'ALT-s25', labels: ['good first issue', 'documentation'],
+        createdAt: '2026-10-08T10:00:00Z',
+        comments: [
+          { id: 1, author: 'ALT-s25', body: '欢迎来到 GitHub！', createdAt: '2026-10-08T10:05:00Z' },
+        ],
+      },
+      '2': {
+        id: 2, title: 'Discuss: README 应该包含哪些内容？',
+        body: '大家觉得一个好的 README 应该写什么？',
+        state: 'open', author: 'ALT-s25', labels: ['question'],
+        createdAt: '2026-10-08T12:00:00Z',
+        comments: [],
+      },
+      '3': {
+        id: 3, title: '修复 README 中的错别字',
+        body: '"基于" 写成了 "机于"。',
+        state: 'closed', author: 'ALT-s25', labels: ['bug'],
+        createdAt: '2026-10-07T09:00:00Z',
+        comments: [],
+      },
+    },
+    pulls: {
+      '1': {
+        id: 1, title: 'Add Skills link to README',
+        state: 'open', author: 'ALT-s25',
+        base: 'main', head: 'feature/skills-link',
+        body: '在 README 加上 GitHub Skills 互动课的链接。',
+        createdAt: '2026-10-08T14:00:00Z',
+        reviews: [],
+        commits: [
+          { sha: 'a1b2c3d', title: 'add skills link', author: 'ALT-s25', createdAt: '2026-10-08T13:55:00Z' },
+          { sha: 'e4f5g6h', title: 'typo fix', author: 'ALT-s25', createdAt: '2026-10-08T13:58:00Z' },
+        ],
+      },
+      '2': {
+        id: 2, title: 'Update code-block styling',
+        state: 'merged', author: 'ALT-s25',
+        base: 'main', head: 'feature/code-style',
+        body: '改进代码块样式。',
+        createdAt: '2026-10-06T11:00:00Z',
+        reviews: [{ reviewer: 'alice', status: 'approved', createdAt: '2026-10-06T12:00:00Z' }],
+        commits: [
+          { sha: 'i7j8k9l', title: 'style: code block', author: 'ALT-s25', createdAt: '2026-10-06T10:55:00Z' },
+        ],
+      },
+    },
+    files: {
+      'README.md': { path: 'README.md', size: '1.2 KB', lines: 45, lastModified: '2 days ago', content: '# my-first-repo 👋\n\n这是我的第一个 GitHub 仓库，用来记录学习过程。\n\n## 快速开始\n\n```bash\ngit clone git@github.com:ALT-s25/my-first-repo.git\ncd my-first-repo\necho "Hello GitHub!" >> README.md\ngit add . && git commit -m "first commit"\ngit push\n```\n\n## 学习进度\n\n- ✅ 注册 GitHub 账号\n- ⏳ 配置 SSH\n- ⬜ 第一次 commit\n' },
+      'index.html': { path: 'index.html', size: '320 B', lines: 18, lastModified: '3 days ago', content: '<!DOCTYPE html>\n<html lang="zh-CN">\n<head>\n  <meta charset="UTF-8">\n  <title>My First Repo</title>\n</head>\n<body>\n  <h1>Hello GitHub!</h1>\n  <p>这是我的第一个静态页面。</p>\n</body>\n</html>' },
+      '.gitignore': { path: '.gitignore', size: '64 B', lines: 4, lastModified: '5 days ago', content: 'node_modules/\n.DS_Store\n*.log\n.env' },
+      'package.json': { path: 'package.json', size: '210 B', lines: 12, lastModified: '4 days ago', content: '{\n  "name": "my-first-repo",\n  "version": "1.0.0",\n  "description": "学习 GitHub 用",\n  "main": "index.js",\n  "scripts": {\n    "start": "node index.js"\n  }\n}' },
+    },
+  };
+}
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(DATA_KEY);
+    if (!raw) return defaultData();
+    return Object.assign(defaultData(), JSON.parse(raw));
+  } catch {
+    return defaultData();
+  }
+}
+
+function saveData() {
+  try {
+    localStorage.setItem(DATA_KEY, JSON.stringify(data));
+  } catch (e) {
+    console.warn('保存失败', e);
+  }
+}
+
+let data = loadData();
+
+// 通用 mutator：mutate('issues.1.state', 'closed') 或 mutate('repo.name', 'foo')
+function mutate(path, value) {
+  const keys = path.split('.');
+  let obj = data;
+  for (let i = 0; i < keys.length - 1; i++) {
+    if (!obj[keys[i]]) obj[keys[i]] = {};
+    obj = obj[keys[i]];
+  }
+  obj[keys[keys.length - 1]] = value;
+  saveData();
+}
+
 // ============ 启动 ============
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
