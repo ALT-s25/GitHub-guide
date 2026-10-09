@@ -67,8 +67,12 @@ function showToast(msg, type = 'info') {
 // ============ Tab 内容渲染 ============
 function renderTabContent(tab) {
   const main = $('#tabContent');
+  // 面包屑容器（仅 L2/L3 显示）
+  const breadcrumb = view.level >= 2
+    ? '<div id="breadcrumb" class="text-xs text-gh-500 mb-3 px-1"></div>'
+    : '';
   if (tab === 'code') {
-    main.innerHTML = `
+    main.innerHTML = breadcrumb + `
       <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117]">
         <!-- 文件头部 -->
         <div class="flex items-center justify-between p-3 border-b border-gh-200 dark:border-[#30363d]">
@@ -112,7 +116,7 @@ function renderTabContent(tab) {
       </div>
     `;
   } else if (tab === 'issues') {
-    main.innerHTML = `
+    main.innerHTML = breadcrumb + `
       <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117]">
         <div class="flex items-center justify-between p-4 border-b border-gh-200 dark:border-[#30363d]">
           <div class="flex items-center gap-3">
@@ -138,7 +142,7 @@ function renderTabContent(tab) {
       </div>
     `;
   } else if (tab === 'pulls') {
-    main.innerHTML = `
+    main.innerHTML = breadcrumb + `
       <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117]">
         <div class="flex items-center justify-between p-4 border-b border-gh-200 dark:border-[#30363d]">
           <div class="flex items-center gap-3">
@@ -156,7 +160,7 @@ function renderTabContent(tab) {
       </div>
     `;
   } else if (tab === 'actions') {
-    main.innerHTML = `
+    main.innerHTML = breadcrumb + `
       <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] p-8 text-center text-gh-500 text-sm">
         <i class="fa fa-play-circle text-4xl mb-2 block text-gh-300"></i>
         还没有 workflow。<br>
@@ -164,7 +168,7 @@ function renderTabContent(tab) {
       </div>
     `;
   } else if (tab === 'projects') {
-    main.innerHTML = `
+    main.innerHTML = breadcrumb + `
       <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] p-8 text-center text-gh-500 text-sm">
         <i class="fa fa-table text-4xl mb-2 block text-gh-300"></i>
         还没有 Project。<br>
@@ -172,7 +176,7 @@ function renderTabContent(tab) {
       </div>
     `;
   } else if (tab === 'security') {
-    main.innerHTML = `
+    main.innerHTML = breadcrumb + `
       <div class="space-y-3">
         <div class="learnable border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] p-4" data-learnable="security-policy">
           <h3 class="text-sm font-semibold mb-1"><i class="fa fa-shield text-gh-500"></i> Security policy</h3>
@@ -189,7 +193,7 @@ function renderTabContent(tab) {
       </div>
     `;
   } else if (tab === 'insights') {
-    main.innerHTML = `
+    main.innerHTML = breadcrumb + `
       <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] p-6">
         <h2 class="text-lg font-semibold mb-3">📊 仓库概览</h2>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -213,7 +217,7 @@ function renderTabContent(tab) {
       </div>
     `;
   } else if (tab === 'settings') {
-    main.innerHTML = `
+    main.innerHTML = breadcrumb + `
       <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] divide-y divide-gh-200 dark:divide-[#30363d]">
         ${[
           { icon: 'fa-cog', name: 'General', desc: '改名、可见性、删除仓库等' },
@@ -654,6 +658,46 @@ function mutate(path, value) {
   }
   obj[keys[keys.length - 1]] = value;
   saveData();
+}
+
+// ============ 路由层 ============
+const view = { tab: 'code', level: 1, params: {} };
+
+const TAB_NAMES = { code: 'Code', issues: 'Issues', pulls: 'Pull requests', actions: 'Actions', projects: 'Projects', security: 'Security', insights: 'Insights', settings: 'Settings' };
+
+function renderBreadcrumb() {
+  const bc = $('#breadcrumb');
+  if (!bc) return;
+  const { tab, level, params } = view;
+  const segs = ['<a href="#" data-nav="root" class="hover:underline">仓库</a>'];
+  if (level >= 1) segs.push(`<a href="#" data-nav="tab:${tab}" class="hover:underline">${TAB_NAMES[tab]}</a>`);
+  if (level >= 2 && params.id) {
+    const title = (data.issues[params.id] || data.pulls[params.id] || data.files[params.id])?.title || data.files[params.id]?.path || `#${params.id}`;
+    segs.push(`<span class="text-gh-700 dark:text-gh-300">#${params.id} ${escapeHtml(title)}</span>`);
+  }
+  if (level >= 3) {
+    if (params.cid) segs.push(`<span class="text-gh-700 dark:text-gh-300">评论 #${params.cid}</span>`);
+    if (params.sha) segs.push(`<span class="text-gh-700 dark:text-gh-300 font-mono text-xs">${params.sha.slice(0, 7)}</span>`);
+  }
+  const back = level > 1 ? `<button id="bcBack" class="mr-2 px-2 py-0.5 rounded hover:bg-gh-100 dark:hover:bg-[#21262d] text-gh-600 dark:text-gh-400 text-xs">← 返回</button>` : '';
+  bc.innerHTML = `${back}${segs.join(' <span class="text-gh-400 mx-1">/</span> ')}`;
+  const backBtn = $('#bcBack');
+  if (backBtn) backBtn.addEventListener('click', goBack);
+}
+
+function navigate(tab, level, params = {}) {
+  view.tab = tab;
+  view.level = level;
+  view.params = params;
+  // 更新 active tab
+  $$('.tab-btn').forEach(b => b.classList.toggle('tab-active', b.dataset.tab === tab));
+  renderTabContent(tab);
+  renderBreadcrumb();
+  window.scrollTo(0, 0);
+}
+
+function goBack() {
+  if (view.level > 1) navigate(view.tab, view.level - 1, view.params);
 }
 
 // ============ 启动 ============
