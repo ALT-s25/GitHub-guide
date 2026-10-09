@@ -153,31 +153,12 @@ function renderTabContent(tab) {
       </div>
     `;
   } else if (tab === 'settings') {
-    main.innerHTML = breadcrumb + `
-      <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] divide-y divide-gh-200 dark:divide-[#30363d]">
-        ${[
-          { icon: 'fa-cog', name: 'General', desc: '改名、可见性、删除仓库等' },
-          { icon: 'fa-bell', name: 'Notifications', desc: '订阅规则、通知邮箱' },
-          { icon: 'fa-lock', name: 'Access', desc: '协作者、团队、部署密钥' },
-          { icon: 'fa-code-fork', name: 'Collaborators', desc: '邀请协作者（私有仓库）' },
-          { icon: 'fa-code-branch', name: 'Branches', desc: '默认分支、分支保护规则' },
-          { icon: 'fa-tag', name: 'Tags', desc: '管理 release 标签' },
-          { icon: 'fa-globe', name: 'Pages', desc: '部署静态网站' },
-          { icon: 'fa-key', name: 'Secrets and variables', desc: 'CI/CD 用的密钥' },
-          { icon: 'fa-plug', name: 'Integrations', desc: '第三方应用授权' },
-          { icon: 'fa-ban', name: 'Danger Zone', desc: '转移、归档、删除' },
-        ].map(item => `
-          <button class="learnable w-full flex items-center gap-3 p-4 hover:bg-gh-50 dark:hover:bg-[#161b22] text-left" data-learnable="settings-${item.name.toLowerCase().split(' ')[0]}">
-            <i class="fa ${item.icon} text-gh-500 w-5"></i>
-            <div class="flex-1 min-w-0">
-              <div class="text-sm font-semibold">${item.name}</div>
-              <div class="text-xs text-gh-500">${item.desc}</div>
-            </div>
-            <i class="fa fa-chevron-right text-gh-400 text-xs"></i>
-          </button>
-        `).join('')}
-      </div>
-    `;
+    if (view.level === 1 || !view.params.setting) {
+      renderSettingsList(main, breadcrumb);
+    } else if (view.level === 2) {
+      renderSettingDetail(main, breadcrumb, view.params.setting);
+    }
+    return;
   }
 
   // 重新绑定可学习元素
@@ -615,6 +596,10 @@ function renderBreadcrumb() {
   }
   if (level >= 2 && params.path && tab === 'code') {
     segs.push(`<span class="text-gh-700 dark:text-gh-300">${escapeHtml(params.path)}</span>`);
+  }
+  if (level >= 2 && params.setting && tab === 'settings') {
+    const item = SETTINGS_ITEMS.find(s => s.id === params.setting);
+    if (item) segs.push(`<span class="text-gh-700 dark:text-gh-300">${item.name}</span>`);
   }
   if (level >= 3) {
     if (params.cid) segs.push(`<span class="text-gh-700 dark:text-gh-300">评论 #${params.cid}</span>`);
@@ -1076,3 +1061,146 @@ function renderCommitDetail(main, breadcrumb, id, sha) {
     </div>
   `;
 }
+
+// ============ Settings Tab ============
+const SETTINGS_ITEMS = [
+  { id: 'general', icon: 'fa-cog', name: 'General', desc: '改名、可见性、删除仓库等' },
+  { id: 'notifications', icon: 'fa-bell', name: 'Notifications', desc: '订阅规则、通知邮箱' },
+  { id: 'access', icon: 'fa-lock', name: 'Access', desc: '协作者、团队、部署密钥' },
+  { id: 'collaborators', icon: 'fa-code-fork', name: 'Collaborators', desc: '邀请协作者（私有仓库）' },
+  { id: 'branches', icon: 'fa-code-branch', name: 'Branches', desc: '默认分支、分支保护规则' },
+  { id: 'tags', icon: 'fa-tag', name: 'Tags', desc: '管理 release 标签' },
+  { id: 'pages', icon: 'fa-globe', name: 'Pages', desc: '部署静态网站' },
+  { id: 'secrets', icon: 'fa-key', name: 'Secrets and variables', desc: 'CI/CD 用的密钥' },
+  { id: 'integrations', icon: 'fa-plug', name: 'Integrations', desc: '第三方应用授权' },
+  { id: 'danger', icon: 'fa-ban', name: 'Danger Zone', desc: '转移、归档、删除' },
+];
+
+function renderSettingsList(main, breadcrumb) {
+  main.innerHTML = breadcrumb + `
+    <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] divide-y divide-gh-200 dark:divide-[#30363d]">
+      ${SETTINGS_ITEMS.map(item => `
+        <button class="nav-to-setting w-full flex items-center gap-3 p-4 hover:bg-gh-50 dark:hover:bg-[#161b22] text-left" data-setting="${item.id}">
+          <i class="fa ${item.icon} text-gh-500 w-5"></i>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-semibold">${item.name}</div>
+            <div class="text-xs text-gh-500">${item.desc}</div>
+          </div>
+          <i class="fa fa-chevron-right text-gh-400 text-xs"></i>
+        </button>
+      `).join('')}
+    </div>
+  `;
+  $$('.nav-to-setting').forEach(b => b.addEventListener('click', () => {
+    navigate('settings', 2, { setting: b.dataset.setting });
+  }));
+}
+
+function renderSettingDetail(main, breadcrumb, settingId) {
+  view.params = { setting: settingId };
+  const item = SETTINGS_ITEMS.find(s => s.id === settingId);
+  if (!item) { main.innerHTML = '<p>设置项不存在</p>'; return; }
+  let body = '';
+  if (settingId === 'general') {
+    body = `
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold mb-1">仓库名</label>
+          <input id="repoName" type="text" value="${escapeHtml(data.repo.name)}" class="w-full px-3 py-2 border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] text-sm">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold mb-1">描述</label>
+          <textarea id="repoDesc" rows="2" class="w-full px-3 py-2 border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] text-sm">${escapeHtml(data.repo.description)}</textarea>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold mb-1">可见性</label>
+          <div class="space-y-1 text-sm">
+            <label class="flex items-center gap-2"><input type="radio" name="visibility" value="public" ${data.repo.visibility === 'public' ? 'checked' : ''}> 公开</label>
+            <label class="flex items-center gap-2"><input type="radio" name="visibility" value="private" ${data.repo.visibility === 'private' ? 'checked' : ''}> 私有</label>
+          </div>
+        </div>
+      </div>
+    `;
+  } else if (settingId === 'access' || settingId === 'collaborators') {
+    body = `
+      <div class="space-y-3">
+        <div>
+          <h3 class="text-sm font-semibold mb-2">当前协作者 (${data.repo.collaborators.length})</h3>
+          <ul class="space-y-1 text-sm">
+            ${data.repo.collaborators.map(u => `<li class="px-3 py-1.5 border border-gh-200 dark:border-[#30363d] rounded">${escapeHtml(u)}</li>`).join('')}
+          </ul>
+        </div>
+        <div class="border-t border-gh-200 dark:border-[#30363d] pt-3">
+          <label class="block text-sm font-semibold mb-1">添加协作者</label>
+          <div class="flex gap-2">
+            <input id="newCollab" type="text" placeholder="GitHub 用户名" class="flex-1 px-3 py-2 border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] text-sm">
+            <button id="addCollab" class="btn btn-primary text-xs">添加</button>
+          </div>
+        </div>
+      </div>
+    `;
+  } else if (settingId === 'branches') {
+    body = `
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold mb-1">默认分支</label>
+          <select id="defaultBranch" class="w-full px-3 py-2 border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] text-sm">
+            <option ${data.repo.defaultBranch === 'main' ? 'selected' : ''}>main</option>
+            <option ${data.repo.defaultBranch === 'master' ? 'selected' : ''}>master</option>
+          </select>
+        </div>
+        <div>
+          <label class="flex items-center gap-2 text-sm">
+            <input id="branchProtection" type="checkbox" ${data.repo.branchProtection ? 'checked' : ''}>
+            启用分支保护规则（要求 PR review）
+          </label>
+        </div>
+      </div>
+    `;
+  } else {
+    body = `<p class="text-sm text-gh-500">${escapeHtml(item.desc)} — 此项表单为演示占位。</p>`;
+  }
+  main.innerHTML = breadcrumb + `
+    <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117]">
+      <div class="p-4 border-b border-gh-200 dark:border-[#30363d]">
+        <h2 class="text-lg font-semibold"><i class="fa ${item.icon} text-gh-500"></i> ${item.name}</h2>
+        <p class="text-xs text-gh-500 mt-1">${escapeHtml(item.desc)}</p>
+      </div>
+      <div class="p-4">${body}</div>
+      <div class="p-4 border-t border-gh-200 dark:border-[#30363d] flex justify-end">
+        <button id="saveSetting" class="btn btn-primary text-xs">Save changes</button>
+      </div>
+    </div>
+  `;
+  $('#saveSetting')?.addEventListener('click', () => {
+    if (settingId === 'general') {
+      const name = $('#repoName').value.trim();
+      const desc = $('#repoDesc').value.trim();
+      const vis = document.querySelector('input[name="visibility"]:checked')?.value;
+      if (name) mutate('repo.name', name);
+      if (desc !== undefined) mutate('repo.description', desc);
+      if (vis) mutate('repo.visibility', vis);
+      showToast('已保存', 'success');
+      navigate('settings', 2, { setting: 'general' });
+    } else if (settingId === 'access' || settingId === 'collaborators') {
+      const u = $('#newCollab')?.value.trim();
+      if (u && !data.repo.collaborators.includes(u)) {
+        mutate('repo.collaborators', [...data.repo.collaborators, u]);
+        showToast(`已添加 ${u}`, 'success');
+        navigate('settings', 2, { setting: settingId });
+      } else if (u) {
+        showToast('该用户已是协作者', 'info');
+      } else {
+        showToast('请输入用户名', 'info');
+      }
+    } else if (settingId === 'branches') {
+      mutate('repo.defaultBranch', $('#defaultBranch').value);
+      mutate('repo.branchProtection', $('#branchProtection').checked);
+      showToast('已保存', 'success');
+      navigate('settings', 2, { setting: 'branches' });
+    } else {
+      showToast(`${item.name} 配置已保存（演示）`, 'success');
+    }
+  });
+}
+
