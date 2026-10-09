@@ -157,9 +157,7 @@ function bindTabs() {
   $$('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const tab = btn.dataset.tab;
-      $$('.tab-btn').forEach(b => b.classList.remove('tab-active'));
-      btn.classList.add('tab-active');
-      renderTabContent(tab);
+      navigate(tab, 1, {});
     });
   });
   // 默认激活 code
@@ -577,8 +575,8 @@ function defaultData() {
         createdAt: '2026-10-08T14:00:00Z',
         reviews: [],
         commits: [
-          { sha: 'a1b2c3d', title: 'add skills link', author: 'ALT-s25', createdAt: '2026-10-08T13:55:00Z' },
-          { sha: 'e4f5g6h', title: 'typo fix', author: 'ALT-s25', createdAt: '2026-10-08T13:58:00Z' },
+          { sha: 'a1b2c3d', prId: 1, title: 'add skills link', author: 'ALT-s25', createdAt: '2026-10-08T13:55:00Z' },
+          { sha: 'e4f5g6h', prId: 1, title: 'typo fix', author: 'ALT-s25', createdAt: '2026-10-08T13:58:00Z' },
         ],
       },
       '2': {
@@ -589,7 +587,7 @@ function defaultData() {
         createdAt: '2026-10-06T11:00:00Z',
         reviews: [{ reviewer: 'alice', status: 'approved', createdAt: '2026-10-06T12:00:00Z' }],
         commits: [
-          { sha: 'i7j8k9l', title: 'style: code block', author: 'ALT-s25', createdAt: '2026-10-06T10:55:00Z' },
+          { sha: 'i7j8k9l', prId: 2, title: 'style: code block', author: 'ALT-s25', createdAt: '2026-10-06T10:55:00Z' },
         ],
       },
     },
@@ -786,7 +784,7 @@ function renderCodeHistory(main, breadcrumb, path) {
       <ul class="divide-y divide-gh-200 dark:divide-[#30363d]">
         ${commits.map(c => `
           <li class="p-4 hover:bg-gh-50 dark:hover:bg-[#161b22]">
-            <a href="#" class="nav-to-commit block" data-sha="${c.sha}" data-prid="1">
+            <a href="#" class="nav-to-commit block" data-sha="${c.sha}" data-prid="${c.prId}">
               <div class="text-sm font-semibold text-[#0969da] hover:underline">${escapeHtml(c.title)}</div>
               <div class="text-xs text-gh-500 mt-1">
                 <span class="font-mono">${c.sha.slice(0, 7)}</span>
@@ -843,8 +841,6 @@ function renderIssuesList(main, breadcrumb) {
 }
 
 function showNewIssueModal() {
-  const m = $('#newIssueModal');
-  if (m) { m.classList.remove('hidden'); return; }
   const modal = document.createElement('div');
   modal.id = 'newIssueModal';
   modal.className = 'fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4';
@@ -859,7 +855,7 @@ function showNewIssueModal() {
         <textarea id="newIssueBody" rows="5" placeholder="描述（支持 Markdown）" class="w-full px-3 py-2 border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] text-sm"></textarea>
       </div>
       <div class="flex justify-end gap-2 p-4 border-t border-gh-200 dark:border-[#30363d]">
-        <button id="cancelNewIssue2" class="btn btn-secondary">取消</button>
+        <button id="cancelNewIssueCancel" class="btn btn-secondary">取消</button>
         <button id="submitNewIssue" class="btn btn-primary">提交</button>
       </div>
     </div>
@@ -867,13 +863,13 @@ function showNewIssueModal() {
   document.body.appendChild(modal);
   const close = () => modal.remove();
   $('#cancelNewIssue').onclick = close;
-  $('#cancelNewIssue2').onclick = close;
+  $('#cancelNewIssueCancel').onclick = close;
   $('#submitNewIssue').onclick = () => {
     const title = $('#newIssueTitle').value.trim();
     const body = $('#newIssueBody').value.trim();
     if (!title) return showToast('标题不能为空', 'info');
     const id = String(Date.now());
-    data.issues[id] = { id: parseInt(id), title, body, state: 'open', author: 'ALT-s25', labels: [], createdAt: new Date().toISOString(), comments: [] };
+    data.issues[id] = { id: parseInt(id, 10), title, body, state: 'open', author: 'ALT-s25', labels: [], createdAt: new Date().toISOString(), comments: [] };
     saveData();
     close();
     showToast('Issue 已创建', 'success');
@@ -884,7 +880,6 @@ function showNewIssueModal() {
 function renderIssueDetail(main, breadcrumb, id) {
   const issue = data.issues[id];
   if (!issue) { main.innerHTML = '<p>Issue 不存在</p>'; return; }
-  view.params = { id };
   main.innerHTML = breadcrumb + `
     <div class="space-y-4">
       <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117]">
@@ -942,11 +937,11 @@ function renderIssueComment(main, breadcrumb, id, cid) {
   const issue = data.issues[id];
   const c = issue?.comments.find(x => String(x.id) === String(cid));
   if (!c) { main.innerHTML = '<p>评论不存在</p>'; return; }
-  view.params = { id, cid };
+  const initial = (c.author && c.author[0] ? c.author[0].toUpperCase() : '?');
   main.innerHTML = breadcrumb + `
     <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] p-5">
       <div class="flex items-center gap-2 mb-3">
-        <div class="w-8 h-8 rounded-full bg-[#0969da] text-white flex items-center justify-center text-sm font-semibold">${escapeHtml(c.author[0].toUpperCase())}</div>
+        <div class="w-8 h-8 rounded-full bg-[#0969da] text-white flex items-center justify-center text-sm font-semibold">${escapeHtml(initial)}</div>
         <div>
           <div class="text-sm font-semibold">${escapeHtml(c.author)}</div>
           <div class="text-xs text-gh-500">${c.createdAt.slice(0, 19).replace('T', ' ')}</div>
@@ -1167,7 +1162,6 @@ function renderSettingsList(main, breadcrumb) {
 }
 
 function renderSettingDetail(main, breadcrumb, settingId) {
-  view.params = { setting: settingId };
   const item = SETTINGS_ITEMS.find(s => s.id === settingId);
   if (!item) { main.innerHTML = '<p>设置项不存在</p>'; return; }
   let body = '';
@@ -1242,27 +1236,28 @@ function renderSettingDetail(main, breadcrumb, settingId) {
       </div>
     </div>
   `;
+  $('#addCollab')?.addEventListener('click', () => {
+    const u = $('#newCollab')?.value.trim();
+    if (u && !data.repo.collaborators.includes(u)) {
+      mutate('repo.collaborators', [...data.repo.collaborators, u]);
+      showToast(`已添加 ${u}`, 'success');
+      navigate('settings', 2, { setting: settingId });
+    } else if (u) {
+      showToast('该用户已是协作者', 'info');
+    } else {
+      showToast('请输入用户名', 'info');
+    }
+  });
   $('#saveSetting')?.addEventListener('click', () => {
     if (settingId === 'general') {
       const name = $('#repoName').value.trim();
       const desc = $('#repoDesc').value.trim();
       const vis = document.querySelector('input[name="visibility"]:checked')?.value;
       if (name) mutate('repo.name', name);
-      if (desc !== undefined) mutate('repo.description', desc);
+      if (desc) mutate('repo.description', desc);
       if (vis) mutate('repo.visibility', vis);
       showToast('已保存', 'success');
       navigate('settings', 2, { setting: 'general' });
-    } else if (settingId === 'access' || settingId === 'collaborators') {
-      const u = $('#newCollab')?.value.trim();
-      if (u && !data.repo.collaborators.includes(u)) {
-        mutate('repo.collaborators', [...data.repo.collaborators, u]);
-        showToast(`已添加 ${u}`, 'success');
-        navigate('settings', 2, { setting: settingId });
-      } else if (u) {
-        showToast('该用户已是协作者', 'info');
-      } else {
-        showToast('请输入用户名', 'info');
-      }
     } else if (settingId === 'branches') {
       mutate('repo.defaultBranch', $('#defaultBranch').value);
       mutate('repo.branchProtection', $('#branchProtection').checked);
