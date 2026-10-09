@@ -78,31 +78,14 @@ function renderTabContent(tab) {
     }
     return;
   } else if (tab === 'issues') {
-    main.innerHTML = breadcrumb + `
-      <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117]">
-        <div class="flex items-center justify-between p-4 border-b border-gh-200 dark:border-[#30363d]">
-          <div class="flex items-center gap-3">
-            <input type="text" placeholder="is:open is:issue" class="learnable text-sm px-3 py-1.5 rounded-md bg-gh-50 dark:bg-[#0d1117] border border-gh-200 dark:border-[#30363d] w-64 focus:border-[#0969da] focus:outline-none" data-learnable="issue-search">
-            <button class="learnable btn btn-secondary text-xs" data-learnable="issue-labels">Labels <i class="fa fa-caret-down text-xs"></i></button>
-            <button class="learnable btn btn-secondary text-xs" data-learnable="issue-milestones">Milestones</button>
-          </div>
-          <button class="learnable btn btn-primary" data-learnable="new-issue"><i class="fa fa-plus"></i> New issue</button>
-        </div>
-        <div class="p-4">
-          <div class="learnable flex items-center gap-3 p-3 border border-gh-200 dark:border-[#30363d] rounded-md hover:bg-gh-50 dark:hover:bg-[#161b22] cursor-pointer" data-learnable="issue-item">
-            <i class="fa fa-exclamation-circle text-[#1a7f37]"></i>
-            <div class="flex-1 min-w-0">
-              <div class="text-sm font-semibold text-[#0969da]">Welcome to your first issue!</div>
-              <div class="text-xs text-gh-500 mt-0.5">#1 opened 1 day ago by ALT-s25</div>
-            </div>
-            <div class="flex items-center gap-1.5">
-              <span class="label label-green">good first issue</span>
-              <span class="label label-purple">documentation</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
+    if (view.level === 1) {
+      renderIssuesList(main, breadcrumb);
+    } else if (view.level === 2) {
+      renderIssueDetail(main, breadcrumb, view.params.id);
+    } else if (view.level >= 3) {
+      renderIssueComment(main, breadcrumb, view.params.id, view.params.cid);
+    }
+    return;
   } else if (tab === 'pulls') {
     main.innerHTML = breadcrumb + `
       <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117]">
@@ -774,6 +757,158 @@ function renderCodeHistory(main, breadcrumb, path) {
     e.preventDefault();
     navigate('pulls', 3, { id: a.dataset.prid, sha: a.dataset.sha });
   }));
+}
+
+// ============ Issues Tab ============
+function renderIssuesList(main, breadcrumb) {
+  const issueArr = Object.values(data.issues);
+  main.innerHTML = breadcrumb + `
+    <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117]">
+      <div class="flex items-center justify-between p-3 border-b border-gh-200 dark:border-[#30363d]">
+        <div class="flex items-center gap-3">
+          <input type="text" placeholder="is:open is:issue" class="learnable text-sm px-3 py-1.5 rounded-md bg-gh-50 dark:bg-[#0d1117] border border-gh-200 dark:border-[#30363d] w-64 focus:border-[#0969da] focus:outline-none" data-learnable="issue-search">
+          <button class="learnable btn btn-secondary text-xs" data-learnable="issue-labels">Labels <i class="fa fa-caret-down text-xs"></i></button>
+        </div>
+        <button id="newIssueBtn" class="learnable btn btn-primary text-xs" data-learnable="new-issue"><i class="fa fa-plus"></i> New issue</button>
+      </div>
+      <ul class="divide-y divide-gh-200 dark:divide-[#30363d]">
+        ${issueArr.map(i => `
+          <li>
+            <a href="#" class="nav-to-issue flex items-center gap-3 p-3 hover:bg-gh-50 dark:hover:bg-[#161b22]" data-id="${i.id}">
+              <i class="fa ${i.state === 'open' ? 'fa-exclamation-circle text-[#1a7f37]' : 'fa-check-circle text-[#8250df]'}"></i>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-semibold text-[#0969da]">${escapeHtml(i.title)}</div>
+                <div class="text-xs text-gh-500 mt-0.5">#${i.id} opened ${i.createdAt.slice(0, 10)} by ${escapeHtml(i.author)}</div>
+              </div>
+              <div class="flex items-center gap-1.5">
+                ${i.labels.map(l => `<span class="label label-${l.includes('bug') ? 'red' : l.includes('good') ? 'green' : 'purple'}">${escapeHtml(l)}</span>`).join('')}
+              </div>
+            </a>
+          </li>
+        `).join('')}
+      </ul>
+    </div>
+  `;
+  $$('.nav-to-issue').forEach(a => a.addEventListener('click', e => {
+    e.preventDefault();
+    navigate('issues', 2, { id: a.dataset.id });
+  }));
+  $('#newIssueBtn')?.addEventListener('click', () => showNewIssueModal());
+}
+
+function showNewIssueModal() {
+  const m = $('#newIssueModal');
+  if (m) { m.classList.remove('hidden'); return; }
+  const modal = document.createElement('div');
+  modal.id = 'newIssueModal';
+  modal.className = 'fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4';
+  modal.innerHTML = `
+    <div class="bg-white dark:bg-[#161b22] rounded-lg shadow-2xl max-w-xl w-full border border-gh-200 dark:border-[#30363d]">
+      <div class="flex items-center justify-between p-4 border-b border-gh-200 dark:border-[#30363d]">
+        <h2 class="font-semibold">新建 issue</h2>
+        <button id="cancelNewIssue" class="w-8 h-8 flex items-center justify-center rounded-md hover:bg-gh-100 dark:hover:bg-[#21262d]">×</button>
+      </div>
+      <div class="p-4 space-y-3">
+        <input id="newIssueTitle" type="text" placeholder="标题" class="w-full px-3 py-2 border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] text-sm">
+        <textarea id="newIssueBody" rows="5" placeholder="描述（支持 Markdown）" class="w-full px-3 py-2 border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] text-sm"></textarea>
+      </div>
+      <div class="flex justify-end gap-2 p-4 border-t border-gh-200 dark:border-[#30363d]">
+        <button id="cancelNewIssue2" class="btn btn-secondary">取消</button>
+        <button id="submitNewIssue" class="btn btn-primary">提交</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  const close = () => modal.remove();
+  $('#cancelNewIssue').onclick = close;
+  $('#cancelNewIssue2').onclick = close;
+  $('#submitNewIssue').onclick = () => {
+    const title = $('#newIssueTitle').value.trim();
+    const body = $('#newIssueBody').value.trim();
+    if (!title) return showToast('标题不能为空', 'info');
+    const id = String(Date.now());
+    data.issues[id] = { id: parseInt(id), title, body, state: 'open', author: 'ALT-s25', labels: [], createdAt: new Date().toISOString(), comments: [] };
+    saveData();
+    close();
+    showToast('Issue 已创建', 'success');
+    navigate('issues', 1, {});
+  };
+}
+
+function renderIssueDetail(main, breadcrumb, id) {
+  const issue = data.issues[id];
+  if (!issue) { main.innerHTML = '<p>Issue 不存在</p>'; return; }
+  view.params = { id };
+  main.innerHTML = breadcrumb + `
+    <div class="space-y-4">
+      <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117]">
+        <div class="p-4 border-b border-gh-200 dark:border-[#30363d]">
+          <h1 class="text-2xl font-semibold">${escapeHtml(issue.title)} <span class="text-base font-normal text-gh-500">#${issue.id}</span></h1>
+          <div class="text-xs text-gh-500 mt-2">
+            <button id="toggleIssueState" class="px-2 py-0.5 rounded-full text-xs font-semibold ${issue.state === 'open' ? 'bg-[#1a7f37] text-white' : 'bg-[#8250df] text-white'}">${issue.state === 'open' ? 'Open' : 'Closed'}</button>
+            <span class="ml-2">${escapeHtml(issue.author)} 开启于 ${issue.createdAt.slice(0, 10)}</span>
+          </div>
+        </div>
+        <div class="p-4">
+          <p class="text-sm whitespace-pre-wrap">${escapeHtml(issue.body)}</p>
+        </div>
+      </div>
+
+      <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] p-4">
+        <h3 class="text-sm font-semibold mb-2">💬 评论 (${issue.comments.length})</h3>
+        <ul class="space-y-3 mb-4">
+          ${issue.comments.map(c => `
+            <li class="border border-gh-200 dark:border-[#30363d] rounded p-3 nav-to-comment cursor-pointer hover:bg-gh-50 dark:hover:bg-[#161b22]" data-cid="${c.id}">
+              <div class="text-xs text-gh-500 mb-1"><strong>${escapeHtml(c.author)}</strong> · ${c.createdAt.slice(0, 10)}</div>
+              <div class="text-sm">${escapeHtml(c.body)}</div>
+            </li>
+          `).join('')}
+        </ul>
+        <div class="border-t border-gh-200 dark:border-[#30363d] pt-3">
+          <textarea id="newCommentBody" rows="2" placeholder="写下你的评论..." class="w-full px-3 py-2 border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] text-sm"></textarea>
+          <div class="flex justify-end mt-2">
+            <button id="submitComment" class="btn btn-primary text-xs">评论</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  $('#toggleIssueState')?.addEventListener('click', () => {
+    mutate(`issues.${id}.state`, issue.state === 'open' ? 'closed' : 'open');
+    showToast(`Issue 已${issue.state === 'open' ? '关闭' : '重开'}`, 'success');
+    navigate('issues', 2, { id });
+  });
+  $('#submitComment')?.addEventListener('click', () => {
+    const body = $('#newCommentBody').value.trim();
+    if (!body) return showToast('评论不能为空', 'info');
+    const cid = Date.now();
+    issue.comments.push({ id: cid, author: 'ALT-s25', body, createdAt: new Date().toISOString() });
+    saveData();
+    showToast('评论已发布', 'success');
+    navigate('issues', 2, { id });
+  });
+  $$('.nav-to-comment').forEach(li => li.addEventListener('click', () => {
+    navigate('issues', 3, { id, cid: li.dataset.cid });
+  }));
+}
+
+function renderIssueComment(main, breadcrumb, id, cid) {
+  const issue = data.issues[id];
+  const c = issue?.comments.find(x => String(x.id) === String(cid));
+  if (!c) { main.innerHTML = '<p>评论不存在</p>'; return; }
+  view.params = { id, cid };
+  main.innerHTML = breadcrumb + `
+    <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] p-5">
+      <div class="flex items-center gap-2 mb-3">
+        <div class="w-8 h-8 rounded-full bg-[#0969da] text-white flex items-center justify-center text-sm font-semibold">${escapeHtml(c.author[0].toUpperCase())}</div>
+        <div>
+          <div class="text-sm font-semibold">${escapeHtml(c.author)}</div>
+          <div class="text-xs text-gh-500">${c.createdAt.slice(0, 19).replace('T', ' ')}</div>
+        </div>
+      </div>
+      <p class="text-sm whitespace-pre-wrap">${escapeHtml(c.body)}</p>
+    </div>
+  `;
 }
 
 // ============ 启动 ============
