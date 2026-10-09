@@ -138,10 +138,18 @@ function renderTabContent(tab) {
       renderSettingDetail(main, breadcrumb, view.params.setting);
     }
     return;
+  } else if (tab === 'nav') {
+    if (view.level >= 2 && view.params.navId) {
+      renderNavPage(main, breadcrumb, view.params.navId);
+    } else {
+      main.innerHTML = '<p>无效导航</p>';
+    }
+    return;
   }
 
   // 重新绑定可学习元素
   bindLearnables();
+  bindNavPages();
 }
 
 // ============ Tab 切换 ============
@@ -208,6 +216,72 @@ function bindLearnables() {
       }
       showLearnModal(id);
     });
+  });
+}
+
+// ============ 顶部导航 17 子项跳转 ============
+function bindNavPages() {
+  $$('[data-nav-id]').forEach(a => {
+    if (a.dataset.navBound) return;
+    a.dataset.navBound = '1';
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const navId = a.dataset.navId;
+      if (!navId) return;
+      navigate('nav', 2, { navId });
+    });
+  });
+}
+
+// ============ 顶部导航内容页 ============
+function renderNavPage(main, breadcrumb, navId) {
+  const page = NAV_PAGES[navId];
+  if (!page) { main.innerHTML = '<p>页面不存在</p>'; return; }
+  view.params = { navId };
+  main.innerHTML = breadcrumb + `
+    <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117]">
+      <div class="p-4 border-b border-gh-200 dark:border-[#30363d]">
+        <h1 class="text-xl font-semibold"><i class="fa ${page.icon} text-gh-500"></i> ${escapeHtml(page.title)}</h1>
+        <p class="text-sm text-gh-500 mt-1">${escapeHtml(page.subtitle)}</p>
+      </div>
+      <div class="p-4 space-y-4">
+        <div>
+          <h2 class="text-sm font-semibold mb-2 uppercase text-gh-500">介绍</h2>
+          <p class="text-sm leading-relaxed">${escapeHtml(page.intro)}</p>
+        </div>
+        <div>
+          <h2 class="text-sm font-semibold mb-2 uppercase text-gh-500">关键概念</h2>
+          <ul class="space-y-2">
+            ${page.concepts.map(c => `
+              <li class="flex gap-2">
+                <i class="fa fa-check-circle text-[#1a7f37] mt-0.5 flex-shrink-0"></i>
+                <div>
+                  <div class="text-sm font-semibold">${escapeHtml(c.name)}</div>
+                  <div class="text-xs text-gh-500 mt-0.5">${escapeHtml(c.desc)}</div>
+                </div>
+              </li>
+            `).join('')}
+          </ul>
+        </div>
+        <div>
+          <h2 class="text-sm font-semibold mb-2 uppercase text-gh-500">适用场景</h2>
+          <ul class="space-y-1">
+            ${page.scenarios.map(s => `
+              <li class="text-sm flex items-center gap-2">
+                <i class="fa fa-arrow-right text-gh-400 text-xs"></i>
+                ${escapeHtml(s)}
+              </li>
+            `).join('')}
+          </ul>
+        </div>
+      </div>
+      <div class="p-4 border-t border-gh-200 dark:border-[#30363d] flex justify-end">
+        <button id="navBack" class="btn btn-secondary text-xs"><i class="fa fa-arrow-left"></i> 返回</button>
+      </div>
+    </div>
+  `;
+  $('#navBack')?.addEventListener('click', () => {
+    navigate('code', 1, {});
   });
 }
 
@@ -563,7 +637,7 @@ function mutate(path, value) {
 // ============ 路由层 ============
 const view = { tab: 'code', level: 1, params: {} };
 
-const TAB_NAMES = { code: 'Code', issues: 'Issues', pulls: 'Pull requests', actions: 'Actions', projects: 'Projects', security: 'Security', insights: 'Insights', settings: 'Settings' };
+const TAB_NAMES = { code: 'Code', issues: 'Issues', pulls: 'Pull requests', actions: 'Actions', projects: 'Projects', security: 'Security', insights: 'Insights', settings: 'Settings', nav: '顶部导航' };
 
 function renderBreadcrumb() {
   const bc = $('#breadcrumb');
@@ -591,6 +665,13 @@ function renderBreadcrumb() {
     if (params.cid) segs.push(`<span class="text-gh-700 dark:text-gh-300">评论 #${params.cid}</span>`);
     if (params.sha) segs.push(`<span class="text-gh-700 dark:text-gh-300 font-mono text-xs">${params.sha.slice(0, 7)}</span>`);
   }
+  if (tab === 'nav' && params.navId) {
+    const page = NAV_PAGES[params.navId];
+    if (page) {
+      segs.push(`<a href="#" data-nav="dropdown:${page.dropdown}" class="hover:underline">${page.dropdown}</a>`);
+      segs.push(`<span class="text-gh-700 dark:text-gh-300">${escapeHtml(page.title)}</span>`);
+    }
+  }
   const back = level > 1 ? `<button id="bcBack" class="mr-2 px-2 py-0.5 rounded hover:bg-gh-100 dark:hover:bg-[#21262d] text-gh-600 dark:text-gh-400 text-xs">← 返回</button>` : '';
   bc.innerHTML = `${back}${segs.join(' <span class="text-gh-400 mx-1">/</span> ')}`;
   const backBtn = $('#bcBack');
@@ -602,6 +683,7 @@ function renderBreadcrumb() {
       if (target === 'root') navigate('code', 1, {});
       else if (target.startsWith('tab:')) navigate(target.slice(4), 1, {});
       else if (target.startsWith('proj:')) navigate('projects', 2, { project: target.slice(5) });
+      else if (target.startsWith('dropdown:')) navigate('code', 1, {});
     });
   });
 }
@@ -881,6 +963,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadState();
   bindTabs();
   bindLearnables();
+  bindNavPages();
   renderTasks();
   renderCheatsheet();
   renderResources();

@@ -353,6 +353,201 @@ const learnables = {
   }
 };
 
+// ============ 顶部导航 17 子项内容页 ============
+const NAV_PAGES = {
+  // Product dropdown
+  'nav-product-repo': {
+    dropdown: 'Product', icon: 'fa-book', title: '代码托管（Repository）',
+    subtitle: 'GitHub 最核心的功能：基于 Git 的代码仓库托管',
+    intro: '每个项目对应一个仓库（Repository），里面存放代码、文档、Issue 跟踪等。这是 GitHub 的根，几乎所有功能都围绕仓库展开。',
+    concepts: [
+      { name: 'Repository（仓库）', desc: '存放项目所有文件 + 历史记录的单位' },
+      { name: 'Branch（分支）', desc: '在主线之外独立开发，避免影响主代码' },
+      { name: 'Commit（提交）', desc: '一次代码改动，带作者、说明、时间戳' },
+      { name: 'Push / Pull', desc: '把本地 commit 推到远端 / 从远端拉回本地' },
+    ],
+    scenarios: ['想托管个人项目', '团队协作开发', '展示作品集'],
+  },
+  'nav-product-actions': {
+    dropdown: 'Product', icon: 'fa-play', title: 'Actions 自动化',
+    subtitle: 'GitHub 的 CI/CD 平台：自动跑测试、构建、部署',
+    intro: '在仓库的 .github/workflows/ 目录放 YAML 文件，定义何时触发（push / PR）和做什么。无需外部服务，GitHub 帮你跑。',
+    concepts: [
+      { name: 'Workflow', desc: '一个 YAML 文件，定义自动化流程' },
+      { name: 'Job（任务）', desc: '一个 runner 上执行的一组步骤' },
+      { name: 'Step（步骤）', desc: '单条命令或 action 调用' },
+      { name: 'Trigger（触发器）', desc: '什么事件启动 workflow（push / PR / schedule）' },
+    ],
+    scenarios: ['提交后自动跑测试', 'PR 合并后自动部署', '定时执行脚本（每日备份）'],
+  },
+  'nav-product-copilot': {
+    dropdown: 'Product', icon: 'fa-magic', title: 'Copilot AI',
+    subtitle: 'AI 编程助手：基于 OpenAI 的 GPT 模型',
+    intro: '在编辑器（VS Code 等）装 Copilot 插件，写代码时它会根据上下文自动建议整行或整段代码，按 Tab 接受。',
+    concepts: [
+      { name: 'Inline suggestion', desc: '行内自动补全建议' },
+      { name: 'Copilot Chat', desc: '对话式 AI 助手，问它任何代码问题' },
+      { name: 'Workspace awareness', desc: '能读懂你整个项目的上下文' },
+    ],
+    scenarios: ['写重复样板代码时', '学新技术时让 AI 解释', '生成测试代码'],
+  },
+  'nav-product-security': {
+    dropdown: 'Product', icon: 'fa-shield', title: '安全扫描',
+    subtitle: 'Dependabot + Code Scanning + Secret Scanning',
+    intro: 'GitHub 内置的自动安全检测工具。Dependabot 检查依赖漏洞、Code Scanning 用 CodeQL 扫代码、Secret Scanning 找意外提交的密钥。',
+    concepts: [
+      { name: 'Dependabot', desc: '自动检测依赖漏洞并提 PR 更新' },
+      { name: 'Code Scanning', desc: '用 CodeQL 静态分析代码找 bug / 漏洞' },
+      { name: 'Secret Scanning', desc: '扫描 commit 历史找意外提交的 token' },
+    ],
+    scenarios: ['开源项目自动保安全', '公司强制要求', '学了之后给简历加技能'],
+  },
+
+  // Solutions dropdown
+  'nav-sol-team': {
+    dropdown: 'Solutions', icon: 'fa-users', title: '团队协作（Team）',
+    subtitle: '用 Organization 管理团队成员和权限',
+    intro: '免费账户可以建 Organization 然后邀请成员，每个成员不同角色（Owner / Member）。5 人以下可以不开 Organization，直接仓库里加协作者更简单。',
+    concepts: [
+      { name: 'Organization', desc: '组织账户，可包含多个团队和仓库' },
+      { name: 'Team', desc: '一组成员，共享同一组仓库权限' },
+      { name: 'Role（角色）', desc: 'Owner（管理员）/ Member（成员）/ Outside collaborator（外部）' },
+    ],
+    scenarios: ['3-5 人协作项目', '公司内部代码托管', '开源项目维护团队'],
+  },
+  'nav-sol-edu': {
+    dropdown: 'Solutions', icon: 'fa-graduation-cap', title: '教育方案',
+    subtitle: 'GitHub Education：学生免费 Pro、教师免费 Team',
+    intro: '用 .edu 邮箱或学信网截图去 https://education.github.com 申请。通过后获得 Student Developer Pack：免费域名、$100 数字海洋额度、Copilot 免费等。',
+    concepts: [
+      { name: 'GitHub Student Developer Pack', desc: '学生认证后的免费福利包' },
+      { name: 'GitHub Campus Program', desc: '学校官方支持' },
+    ],
+    scenarios: ['学生党必备', '老师教学生用 Git', '预算有限的开源项目'],
+  },
+  'nav-sol-game': {
+    dropdown: 'Solutions', icon: 'fa-gamepad', title: '游戏开发',
+    subtitle: 'Unity / Unreal 集成的 Git 方案',
+    intro: '用 Git LFS（Large File Storage）管理贴图、3D 模型等大文件。其他用法和普通项目一样。GitHub 还提供 Game Off 等游戏开发活动。',
+    concepts: [
+      { name: 'Git LFS', desc: 'Git 大文件存储扩展，替代直接存二进制' },
+      { name: '.gitignore for Unity/Unreal', desc: '忽略编辑器生成的临时文件' },
+    ],
+    scenarios: ['独立游戏开发者', '3A 工作室协作', '学习游戏开发'],
+  },
+
+  // Resources dropdown
+  'nav-res-docs': {
+    dropdown: 'Resources', icon: 'fa-book', title: 'GitHub 官方文档',
+    subtitle: '最权威的 GitHub 使用手册：https://docs.github.com',
+    intro: '按主题分类：入门 / 仓库 / 协作 / 管理 / 开发。遇到任何 GitHub 问题先查这里。英文为主，部分页面有中文翻译（URL 把 en 改成 zh 试试）。',
+    concepts: [
+      { name: 'Get started', desc: '新手入门路径' },
+      { name: 'Repositories', desc: '仓库管理详解' },
+      { name: 'Pull requests', desc: '协作流程核心' },
+    ],
+    scenarios: ['遇到问题查文档', '系统学习某功能', 'API 集成时查接口'],
+  },
+  'nav-res-blog': {
+    dropdown: 'Resources', icon: 'fa-newspaper-o', title: 'GitHub 博客',
+    subtitle: '产品更新 + 技术文章 + 用户故事',
+    intro: '地址：https://github.blog 。可以看到 GitHub 官方发布的新功能、技术深度文章、客户案例。订阅 RSS 可以第一时间知道产品变化。',
+    concepts: [
+      { name: 'Changelog', desc: '功能更新日志' },
+      { name: 'Engineering', desc: 'GitHub 工程团队技术分享' },
+    ],
+    scenarios: ['了解 GitHub 新功能', '学习大型团队工程实践'],
+  },
+  'nav-res-community': {
+    dropdown: 'Resources', icon: 'fa-comments', title: 'GitHub Community',
+    subtitle: '官方论坛：https://github.community',
+    intro: '在这里问问题，GitHub 员工会回。新手友好，搜索能解决大部分问题。',
+    concepts: [
+      { name: 'Discussions', desc: '非 issue 的讨论区' },
+      { name: 'Best practices', desc: '社区维护的最佳实践帖' },
+    ],
+    scenarios: ['问 GitHub 使用问题', '找功能建议贴', '和 GitHub 员工互动'],
+  },
+  'nav-res-skills': {
+    dropdown: 'Resources', icon: 'fa-graduation-cap', title: 'GitHub Skills（互动课）',
+    subtitle: '官方免费互动课程：https://skills.github.com',
+    intro: '像玩游戏一样学 GitHub。每节课会在你账号下创建一个练习仓库，跟着引导一步步操作。强烈推荐新手！',
+    concepts: [
+      { name: 'Introduction to GitHub', desc: '最基础的入门课' },
+      { name: 'Review pull requests', desc: '学怎么 review 代码' },
+      { name: 'Resolve merge conflicts', desc: '解决合并冲突实战' },
+    ],
+    scenarios: ['完全新手', '想系统学一遍', '带新人时推荐给他们'],
+  },
+
+  // Open Source dropdown
+  'nav-os-explore': {
+    dropdown: 'Open Source', icon: 'fa-compass', title: 'Explore（探索）',
+    subtitle: 'GitHub 的"发现"页面：https://github.com/explore',
+    intro: '推荐仓库、热门话题、值得关注的人。按主题分组（前端、后端、AI、DevOps 等）。不知道该看什么时来这里，会刷新你对开源世界的认知。',
+    concepts: [
+      { name: 'Trending', desc: '当前热门仓库' },
+      { name: 'Collections', desc: '按主题整理的仓库列表' },
+      { name: 'Topics', desc: '按技术标签浏览' },
+    ],
+    scenarios: ['找练手项目', '追热点技术', '找同好社区'],
+  },
+  'nav-os-topics': {
+    dropdown: 'Open Source', icon: 'fa-tag', title: 'Topics（话题）',
+    subtitle: '按话题标签找仓库：https://github.com/topics/react',
+    intro: '所有仓库都打上 topic 标签（如 "react" "machine-learning"）。访问 https://github.com/topics/话题名 即可看该话题下所有仓库。',
+    concepts: [
+      { name: 'Topic page', desc: '一个话题的仓库汇总页' },
+      { name: 'Topic search', desc: '搜索时用 topic:xxx 限定' },
+    ],
+    scenarios: ['找某技术栈的优秀项目', '对比同类库', '了解某领域生态'],
+  },
+  'nav-os-trending': {
+    dropdown: 'Open Source', icon: 'fa-fire', title: 'Trending（趋势）',
+    subtitle: '今日 / 本周 / 本月热门：https://github.com/trending',
+    intro: '可按语言筛选（如 trending/python）。每天 5 分钟逛逛，能学到很多业界新动向。',
+    concepts: [
+      { name: 'Daily / Weekly / Monthly', desc: '不同时间维度的热门排行' },
+      { name: 'Spoken language filter', desc: '按自然语言（中文/英文）筛选' },
+    ],
+    scenarios: ['保持技术敏感度', '发现新工具', '找灵感'],
+  },
+
+  // Enterprise dropdown
+  'nav-ent-platform': {
+    dropdown: 'Enterprise', icon: 'fa-building', title: '企业平台',
+    subtitle: 'GitHub Enterprise：私有部署 / SLA 保障 / SSO',
+    intro: '大型公司才用得到。GitHub Enterprise Cloud（云托管）或 GitHub Enterprise Server（自托管）。个人开发者用免费版或 Team 版就够。',
+    concepts: [
+      { name: 'Enterprise Cloud', desc: 'GitHub 官方托管的企业版' },
+      { name: 'Enterprise Server', desc: '公司内网自部署的 GitHub' },
+      { name: 'SLA', desc: '服务等级协议，99.9% 可用性' },
+    ],
+    scenarios: ['500+ 员工的公司', '金融/政府等合规要求高的行业', '需要 SSO / 审计日志'],
+  },
+  'nav-ent-security': {
+    dropdown: 'Enterprise', icon: 'fa-lock', title: '企业级安全',
+    subtitle: 'IP 白名单 / 审计日志 / 强制 2FA / 合规报告',
+    intro: 'Enterprise Cloud 内置。GitHub Advanced Security 是付费插件，能做 code scanning。SOC 2 / FedRAMP 等合规认证。',
+    concepts: [
+      { name: 'SAML SSO', desc: '用公司账号系统登录 GitHub' },
+      { name: 'Audit log', desc: '所有操作的审计记录' },
+      { name: 'IP allow list', desc: '限制只有公司 IP 能访问' },
+    ],
+    scenarios: ['公司安全合规要求', '防止内部代码泄露', '审计谁在什么时间改了什么'],
+  },
+  'nav-ent-ai': {
+    dropdown: 'Enterprise', icon: 'fa-rocket', title: 'Enterprise AI',
+    subtitle: '企业专属 Copilot：数据隔离 / 定制模型',
+    intro: '和普通 Copilot 用法一样，但公司付钱、数据不出内网、可定制模型。GitHub Copilot for Business 起价 $19/用户/月。',
+    concepts: [
+      { name: 'Data isolation', desc: '代码不用于训练公开模型' },
+      { name: 'Fine-tuning', desc: '用公司代码库定制 Copilot' },
+    ],
+    scenarios: ['公司想全员用 Copilot 又担心数据', '代码库很大的企业', '想训练专属 AI 助手'],
+  },
+};
+
 // ============ 任务清单 ============
 const taskChapters = [
   {
