@@ -512,3 +512,89 @@ const faqs = [
     a: '不需要。可以在 PR 页面点 "Delete branch" 一键删。定期清理无用分支。'
   },
 ];
+
+// ============ Actions 演示数据 ============
+const WORKFLOWS = [
+  {
+    id: 'ci',
+    name: 'CI',
+    path: '.github/workflows/ci.yml',
+    yaml: `name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci
+      - run: npm test`,
+    runs: [
+      {
+        id: 1, status: 'success', commitMsg: 'Add Skills link to README',
+        commitAuthor: 'ALT-s25', duration: '1m 23s', startedAt: '2026-10-08T14:05:00Z',
+        jobs: [
+          { name: 'test', status: 'success', steps: [
+            { name: 'Run actions/checkout@v4', status: 'success' },
+            { name: 'Run npm ci', status: 'success' },
+            { name: 'Run npm test', status: 'success' },
+            { name: 'Post Run actions/checkout@v4', status: 'success' },
+          ]},
+        ],
+      },
+      {
+        id: 2, status: 'success', commitMsg: 'typo fix',
+        commitAuthor: 'ALT-s25', duration: '58s', startedAt: '2026-10-08T13:58:00Z',
+        jobs: [
+          { name: 'test', status: 'success', steps: [
+            { name: 'Run actions/checkout@v4', status: 'success' },
+            { name: 'Run npm ci', status: 'success' },
+            { name: 'Run npm test', status: 'success' },
+          ]},
+        ],
+      },
+    ],
+  },
+  {
+    id: 'deploy',
+    name: 'Deploy',
+    path: '.github/workflows/deploy.yml',
+    yaml: `name: Deploy
+on:
+  push:
+    branches: [main]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm run build
+      - run: npm run deploy`,
+    runs: [
+      {
+        id: 3, status: 'failed', commitMsg: 'Update code-block styling',
+        commitAuthor: 'ALT-s25', duration: '32s', startedAt: '2026-10-06T11:05:00Z',
+        jobs: [
+          { name: 'deploy', status: 'failed', steps: [
+            { name: 'Run actions/checkout@v4', status: 'success' },
+            { name: 'Run npm run build', status: 'success' },
+            { name: 'Run npm run deploy', status: 'failed' },
+          ]},
+        ],
+      },
+      {
+        id: 4, status: 'success', commitMsg: 'Initial deploy',
+        commitAuthor: 'ALT-s25', duration: '45s', startedAt: '2026-10-05T09:00:00Z',
+        jobs: [
+          { name: 'deploy', status: 'success', steps: [
+            { name: 'Run actions/checkout@v4', status: 'success' },
+            { name: 'Run npm run build', status: 'success' },
+            { name: 'Run npm run deploy', status: 'success' },
+          ]},
+        ],
+      },
+    ],
+  },
+];

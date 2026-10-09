@@ -96,13 +96,14 @@ function renderTabContent(tab) {
     }
     return;
   } else if (tab === 'actions') {
-    main.innerHTML = breadcrumb + `
-      <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] p-8 text-center text-gh-500 text-sm">
-        <i class="fa fa-play-circle text-4xl mb-2 block text-gh-300"></i>
-        还没有 workflow。<br>
-        <span class="text-xs">在 .github/workflows/ 目录添加 YAML 即可开始自动化。</span>
-      </div>
-    `;
+    if (view.level === 1 || !view.params.wf) {
+      renderActionsList(main, breadcrumb);
+    } else if (view.level === 2) {
+      renderActionRuns(main, breadcrumb, view.params.wf);
+    } else if (view.level >= 3) {
+      renderActionRunDetail(main, breadcrumb, view.params.wf, view.params.run);
+    }
+    return;
   } else if (tab === 'projects') {
     main.innerHTML = breadcrumb + `
       <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] p-8 text-center text-gh-500 text-sm">
@@ -479,6 +480,7 @@ const DATA_KEY = STORAGE_KEY + '-data';  // 'gh-guide-v1-data'
 
 function defaultData() {
   return {
+    workflows: JSON.parse(JSON.stringify(WORKFLOWS)),
     repo: {
       name: 'my-first-repo',
       description: '我的第一个仓库 · 用来学习 GitHub 基础操作',
@@ -1202,5 +1204,143 @@ function renderSettingDetail(main, breadcrumb, settingId) {
       showToast(`${item.name} 配置已保存（演示）`, 'success');
     }
   });
+}
+
+// ============ Actions Tab ============
+function renderActionsList(main, breadcrumb) {
+  main.innerHTML = breadcrumb + `
+    <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] divide-y divide-gh-200 dark:divide-[#30363d]">
+      ${data.workflows.map(wf => {
+        const lastRun = wf.runs[0];
+        const statusIcon = lastRun.status === 'success' ? 'fa-check-circle text-[#1a7f37]'
+          : lastRun.status === 'failed' ? 'fa-times-circle text-[#cf222e]'
+          : 'fa-circle-o-notch fa-spin text-[#0969da]';
+        return `
+        <button class="nav-to-wf w-full flex items-center gap-3 p-4 hover:bg-gh-50 dark:hover:bg-[#161b22] text-left" data-wf="${wf.id}">
+          <i class="fa ${statusIcon} text-lg w-5"></i>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-semibold">${escapeHtml(wf.name)}</div>
+            <div class="text-xs text-gh-500 font-mono">${escapeHtml(wf.path)}</div>
+            <div class="text-xs text-gh-500 mt-0.5">最近 run: ${escapeHtml(lastRun.commitMsg)} · ${lastRun.startedAt.slice(0, 10)}</div>
+          </div>
+          <span class="label ${lastRun.status === 'success' ? 'label-green' : 'label-red'}">${lastRun.status}</span>
+          <i class="fa fa-chevron-right text-gh-400 text-xs"></i>
+        </button>
+      `;}).join('')}
+    </div>
+  `;
+  $$('.nav-to-wf').forEach(b => b.addEventListener('click', () => {
+    navigate('actions', 2, { wf: b.dataset.wf });
+  }));
+}
+
+function renderActionRuns(main, breadcrumb, wfId) {
+  const wf = data.workflows.find(w => w.id === wfId);
+  if (!wf) { main.innerHTML = '<p>workflow 不存在</p>'; return; }
+  view.params = { wf: wfId };
+  main.innerHTML = breadcrumb + `
+    <div class="space-y-4">
+      <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117]">
+        <div class="p-4 border-b border-gh-200 dark:border-[#30363d]">
+          <h2 class="text-lg font-semibold"><i class="fa fa-play-circle text-gh-500"></i> ${escapeHtml(wf.name)}</h2>
+          <p class="text-xs text-gh-500 font-mono mt-1">${escapeHtml(wf.path)}</p>
+        </div>
+        <div class="p-4">
+          <h3 class="text-sm font-semibold mb-2">workflow 文件（YAML 摘录）</h3>
+          <pre class="font-mono text-xs bg-gh-50 dark:bg-[#0d1117] p-3 rounded overflow-x-auto">${escapeHtml(wf.yaml)}</pre>
+        </div>
+      </div>
+
+      <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117]">
+        <div class="p-3 border-b border-gh-200 dark:border-[#30363d] flex items-center justify-between">
+          <h3 class="text-sm font-semibold"><i class="fa fa-history text-gh-500"></i> Runs (${wf.runs.length})</h3>
+          <button id="rerunWf" class="btn btn-secondary text-xs"><i class="fa fa-refresh"></i> Rerun all</button>
+        </div>
+        <ul class="divide-y divide-gh-200 dark:divide-[#30363d]">
+          ${wf.runs.map(r => `
+            <li>
+              <a href="#" class="nav-to-run flex items-center gap-3 p-3 hover:bg-gh-50 dark:hover:bg-[#161b22]" data-run="${r.id}">
+                <i class="fa ${r.status === 'success' ? 'fa-check-circle text-[#1a7f37]' : r.status === 'failed' ? 'fa-times-circle text-[#cf222e]' : 'fa-circle-o-notch fa-spin text-[#0969da]'} text-lg w-5"></i>
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm font-semibold">${escapeHtml(r.commitMsg)}</div>
+                  <div class="text-xs text-gh-500 mt-0.5">#${r.id} · ${escapeHtml(r.commitAuthor)} · ${r.duration} · ${r.startedAt.slice(0, 10)}</div>
+                </div>
+                <span class="label ${r.status === 'success' ? 'label-green' : 'label-red'}">${r.status}</span>
+                <i class="fa fa-chevron-right text-gh-400 text-xs"></i>
+              </a>
+            </li>
+          `).join('')}
+        </ul>
+      </div>
+    </div>
+  `;
+  $$('.nav-to-run').forEach(a => a.addEventListener('click', e => {
+    e.preventDefault();
+    navigate('actions', 3, { wf: wfId, run: a.dataset.run });
+  }));
+  $('#rerunWf')?.addEventListener('click', () => {
+    // 演示模式：把所有 run 标记为 success 并持久化
+    wf.runs.forEach(r => { r.status = 'success'; });
+    saveData();
+    showToast(`已模拟重跑 ${wf.runs.length} 个 run（演示）`, 'success');
+    navigate('actions', 2, { wf: wfId });
+  });
+}
+
+function renderActionRunDetail(main, breadcrumb, wfId, runId) {
+  const wf = data.workflows.find(w => w.id === wfId);
+  const run = wf?.runs.find(r => String(r.id) === String(runId));
+  if (!run) { main.innerHTML = '<p>run 不存在</p>'; return; }
+  view.params = { wf: wfId, run: runId };
+  const statusColor = run.status === 'success' ? 'text-[#1a7f37]'
+    : run.status === 'failed' ? 'text-[#cf222e]' : 'text-[#0969da]';
+  main.innerHTML = breadcrumb + `
+    <div class="space-y-4">
+      <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117]">
+        <div class="p-4 border-b border-gh-200 dark:border-[#30363d]">
+          <div class="flex items-center gap-2">
+            <i class="fa ${run.status === 'success' ? 'fa-check-circle' : 'fa-times-circle'} ${statusColor} text-xl"></i>
+            <h2 class="text-lg font-semibold">${escapeHtml(wf.name)} · run #${run.id}</h2>
+          </div>
+          <div class="text-xs text-gh-500 mt-2">
+            <span class="label ${run.status === 'success' ? 'label-green' : 'label-red'}">${run.status}</span>
+            <span class="ml-2"><strong>${escapeHtml(run.commitMsg)}</strong></span>
+            <span class="ml-2">· ${escapeHtml(run.commitAuthor)} · ${run.duration} · ${run.startedAt.slice(0, 19).replace('T', ' ')}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117]">
+        <div class="p-3 border-b border-gh-200 dark:border-[#30363d]">
+          <h3 class="text-sm font-semibold"><i class="fa fa-cogs text-gh-500"></i> Jobs (${run.jobs.length})</h3>
+        </div>
+        <ul class="divide-y divide-gh-200 dark:divide-[#30363d]">
+          ${run.jobs.map(j => `
+            <li>
+              <button class="nav-to-job w-full flex items-center gap-3 p-3 hover:bg-gh-50 dark:hover:bg-[#161b22] text-left" data-job="${j.name}">
+                <i class="fa ${j.status === 'success' ? 'fa-check-circle text-[#1a7f37]' : j.status === 'failed' ? 'fa-times-circle text-[#cf222e]' : 'fa-circle-o-notch fa-spin text-[#0969da]'} w-5"></i>
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm font-semibold">${escapeHtml(j.name)}</div>
+                  <div class="text-xs text-gh-500 mt-0.5">${j.steps.length} 步</div>
+                </div>
+                <span class="label ${j.status === 'success' ? 'label-green' : 'label-red'}">${j.status}</span>
+                <i class="fa fa-chevron-right text-gh-400 text-xs"></i>
+              </button>
+              <div class="job-logs hidden px-3 pb-3" data-job-log="${j.name}">
+                <pre class="font-mono text-xs bg-gh-50 dark:bg-[#0d1117] p-3 rounded overflow-x-auto">${j.steps.map(s => {
+  const icon = s.status === 'success' ? '✓' : '✗';
+  return `<span class="${s.status === 'success' ? 'text-[#1a7f37]' : 'text-[#cf222e]'}">${icon}</span> ${escapeHtml(s.name)}`;
+}).join('\n')}</pre>
+              </div>
+            </li>
+          `).join('')}
+        </ul>
+      </div>
+    </div>
+  `;
+  $$('.nav-to-job').forEach(b => b.addEventListener('click', () => {
+    const log = $(`[data-job-log="${b.dataset.job}"]`);
+    log?.classList.toggle('hidden');
+  }));
 }
 
