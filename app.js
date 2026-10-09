@@ -54,14 +54,11 @@ const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
 
 function showToast(msg, type = 'info') {
-  const toast = $('#toast');
-  toast.textContent = msg;
-  toast.className = 'fixed bottom-6 right-6 z-50 px-4 py-3 rounded-md shadow-lg text-sm text-white transition-opacity border border-gh-200 dark:border-[#30363d]';
-  if (type === 'success') toast.classList.add('bg-[#1f883d]');
-  else if (type === 'error') toast.classList.add('bg-[#cf222e]');
-  else toast.classList.add('bg-[#24292f]', 'dark:bg-[#161b22]');
-  toast.classList.remove('hidden');
-  setTimeout(() => toast.classList.add('hidden'), 2200);
+  const t = document.createElement('div');
+  t.className = `fixed bottom-6 right-6 px-4 py-2 rounded-md shadow-lg text-sm z-50 ${type === 'success' ? 'bg-[#1f883d] text-white' : 'bg-gh-700 text-white'}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2200);
 }
 
 // ============ Tab 内容渲染 ============
@@ -449,7 +446,8 @@ function renderCheatsheet() {
 }
 
 function escapeHtml(s) {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  if (!s) return '';
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
 // ============ 推荐资源渲染 ============
@@ -683,6 +681,14 @@ function renderBreadcrumb() {
   bc.innerHTML = `${back}${segs.join(' <span class="text-gh-400 mx-1">/</span> ')}`;
   const backBtn = $('#bcBack');
   if (backBtn) backBtn.addEventListener('click', goBack);
+  bc.querySelectorAll('[data-nav]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const target = a.dataset.nav;
+      if (target === 'root') navigate('code', 1, {});
+      else if (target.startsWith('tab:')) navigate(target.slice(4), 1, {});
+    });
+  });
 }
 
 function navigate(tab, level, params = {}) {
