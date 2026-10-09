@@ -87,23 +87,14 @@ function renderTabContent(tab) {
     }
     return;
   } else if (tab === 'pulls') {
-    main.innerHTML = breadcrumb + `
-      <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117]">
-        <div class="flex items-center justify-between p-4 border-b border-gh-200 dark:border-[#30363d]">
-          <div class="flex items-center gap-3">
-            <input type="text" placeholder="is:open is:pr" class="learnable text-sm px-3 py-1.5 rounded-md bg-gh-50 dark:bg-[#0d1117] border border-gh-200 dark:border-[#30363d] w-64 focus:border-[#0969da] focus:outline-none">
-            <button class="learnable btn btn-secondary text-xs">Reviewers</button>
-            <button class="learnable btn btn-secondary text-xs">Labels</button>
-          </div>
-          <button class="learnable btn btn-primary" data-learnable="new-pr"><i class="fa fa-plus"></i> New pull request</button>
-        </div>
-        <div class="p-8 text-center text-gh-500 text-sm">
-          <i class="fa fa-git-pull-request text-4xl mb-2 block text-gh-300"></i>
-          还没有任何 Pull request。<br>
-          <span class="text-xs">新建分支 → 推送 → 即可在这里发 PR。</span>
-        </div>
-      </div>
-    `;
+    if (view.level === 1) {
+      renderPrList(main, breadcrumb);
+    } else if (view.level === 2) {
+      renderPrDetail(main, breadcrumb, view.params.id);
+    } else if (view.level >= 3) {
+      renderCommitDetail(main, breadcrumb, view.params.id, view.params.sha);
+    }
+    return;
   } else if (tab === 'actions') {
     main.innerHTML = breadcrumb + `
       <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117] p-8 text-center text-gh-500 text-sm">
@@ -618,7 +609,8 @@ function renderBreadcrumb() {
   const segs = ['<a href="#" data-nav="root" class="hover:underline">仓库</a>'];
   if (level >= 1) segs.push(`<a href="#" data-nav="tab:${tab}" class="hover:underline">${TAB_NAMES[tab]}</a>`);
   if (level >= 2 && params.id) {
-    const title = (data.issues[params.id] || data.pulls[params.id] || data.files[params.id])?.title || data.files[params.id]?.path || `#${params.id}`;
+    const lookup = tab === 'issues' ? data.issues : tab === 'pulls' ? data.pulls : data.files;
+    const title = lookup[params.id]?.title || data.files[params.id]?.path || `#${params.id}`;
     segs.push(`<span class="text-gh-700 dark:text-gh-300">#${params.id} ${escapeHtml(title)}</span>`);
   }
   if (level >= 2 && params.path && tab === 'code') {
@@ -946,3 +938,141 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+// ============ Pull Requests Tab ============
+function renderPrList(main, breadcrumb) {
+  const prArr = Object.values(data.pulls);
+  main.innerHTML = breadcrumb + `
+    <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117]">
+      <div class="flex items-center justify-between p-3 border-b border-gh-200 dark:border-[#30363d]">
+        <input type="text" placeholder="is:open is:pr" class="learnable text-sm px-3 py-1.5 rounded-md bg-gh-50 dark:bg-[#0d1117] border border-gh-200 dark:border-[#30363d] w-64 focus:border-[#0969da] focus:outline-none">
+        <button id="newPrBtn" class="learnable btn btn-primary text-xs" data-learnable="new-pr"><i class="fa fa-plus"></i> New pull request</button>
+      </div>
+      <ul class="divide-y divide-gh-200 dark:divide-[#30363d]">
+        ${prArr.map(pr => `
+          <li>
+            <a href="#" class="nav-to-pr flex items-center gap-3 p-3 hover:bg-gh-50 dark:hover:bg-[#161b22]" data-id="${pr.id}">
+              <i class="fa ${pr.state === 'open' ? 'fa-git-pull-request text-[#1a7f37]' : pr.state === 'merged' ? 'fa-check-circle text-[#8250df]' : 'fa-times-circle text-[#cf222e]'}"></i>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-semibold text-[#0969da]">${escapeHtml(pr.title)}</div>
+                <div class="text-xs text-gh-500 mt-0.5">#${pr.id} ${pr.head} → ${pr.base} · ${escapeHtml(pr.author)} · ${pr.createdAt.slice(0, 10)}</div>
+              </div>
+              <span class="label ${pr.state === 'open' ? 'label-green' : pr.state === 'merged' ? 'label-purple' : 'label-red'}">${pr.state}</span>
+            </a>
+          </li>
+        `).join('')}
+      </ul>
+    </div>
+  `;
+  $$('.nav-to-pr').forEach(a => a.addEventListener('click', e => {
+    e.preventDefault();
+    navigate('pulls', 2, { id: a.dataset.id });
+  }));
+  $('#newPrBtn')?.addEventListener('click', () => showToast('新建 PR 需要先 push 分支（演示模式）', 'info'));
+}
+
+function renderPrDetail(main, breadcrumb, id) {
+  const pr = data.pulls[id];
+  if (!pr) { main.innerHTML = '<p>PR 不存在</p>'; return; }
+  view.params = { id };
+  const reviewSummary = pr.reviews.length === 0
+    ? '<span class="text-xs text-gh-500">还没有 review</span>'
+    : pr.reviews.map(r => `<span class="label ${r.status === 'approved' ? 'label-green' : 'label-yellow'}">${escapeHtml(r.reviewer)}: ${r.status}</span>`).join(' ');
+  main.innerHTML = breadcrumb + `
+    <div class="space-y-4">
+      <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117]">
+        <div class="p-4 border-b border-gh-200 dark:border-[#30363d]">
+          <h1 class="text-2xl font-semibold">${escapeHtml(pr.title)} <span class="text-base font-normal text-gh-500">#${pr.id}</span></h1>
+          <div class="text-xs text-gh-500 mt-2">
+            <span class="inline-block px-2 py-0.5 rounded-full text-xs font-semibold text-white ${pr.state === 'open' ? 'bg-[#1a7f37]' : pr.state === 'merged' ? 'bg-[#8250df]' : 'bg-[#cf222e]'}">${pr.state}</span>
+            <span class="ml-2"><strong>${escapeHtml(pr.author)}</strong> 想合并 <code>${escapeHtml(pr.head)}</code> → <code>${escapeHtml(pr.base)}</code></span>
+          </div>
+          <div class="flex items-center gap-2 mt-3">
+            ${pr.state === 'open' ? `
+              <button id="approvePr" class="btn btn-primary text-xs"><i class="fa fa-check"></i> Approve</button>
+              <button id="mergePr" class="btn btn-primary text-xs" style="background:#8250df"><i class="fa fa-code-fork"></i> Merge</button>
+            ` : '<span class="text-xs text-gh-500">已合并</span>'}
+          </div>
+          <div class="mt-3">${reviewSummary}</div>
+        </div>
+        <div class="p-4">
+          <p class="text-sm whitespace-pre-wrap">${escapeHtml(pr.body)}</p>
+        </div>
+      </div>
+
+      <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117]">
+        <div class="p-3 border-b border-gh-200 dark:border-[#30363d]">
+          <h3 class="text-sm font-semibold"><i class="fa fa-code-fork text-gh-500"></i> Commits (${pr.commits.length})</h3>
+        </div>
+        <ul class="divide-y divide-gh-200 dark:divide-[#30363d]">
+          ${pr.commits.map(c => `
+            <li>
+              <a href="#" class="nav-to-pr-commit flex items-center gap-3 p-3 hover:bg-gh-50 dark:hover:bg-[#161b22]" data-sha="${c.sha}">
+                <i class="fa fa-commit text-gh-400"></i>
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm font-semibold">${escapeHtml(c.title)}</div>
+                  <div class="text-xs text-gh-500 mt-0.5"><span class="font-mono">${c.sha.slice(0, 7)}</span> · ${escapeHtml(c.author)} · ${c.createdAt.slice(0, 10)}</div>
+                </div>
+              </a>
+            </li>
+          `).join('')}
+        </ul>
+      </div>
+
+      <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117]">
+        <div class="p-3 border-b border-gh-200 dark:border-[#30363d]">
+          <h3 class="text-sm font-semibold"><i class="fa fa-file-code-o text-gh-500"></i> Files changed (演示 diff)</h3>
+        </div>
+        <div class="p-3 font-mono text-xs">
+          <div class="bg-[#e6ffed] dark:bg-[#033a16] px-3 py-1 border-l-4 border-[#1a7f37]"><span class="text-[#1a7f37] font-semibold">+</span> - [GitHub Skills](https://skills.github.com) 互动课程链接</div>
+          <div class="bg-[#ffebe9] dark:bg-[#67060c] px-3 py-1 border-l-4 border-[#cf222e] mt-1"><span class="text-[#cf222e] font-semibold">-</span> - GitHub 官方文档</div>
+        </div>
+      </div>
+    </div>
+  `;
+  $('#approvePr')?.addEventListener('click', () => {
+    pr.reviews.push({ reviewer: 'ALT-s25', status: 'approved', createdAt: new Date().toISOString() });
+    saveData();
+    showToast('已 Approve', 'success');
+    navigate('pulls', 2, { id });
+  });
+  $('#mergePr')?.addEventListener('click', () => {
+    mutate(`pulls.${id}.state`, 'merged');
+    showToast('PR 已合并', 'success');
+    navigate('pulls', 2, { id });
+  });
+  $$('.nav-to-pr-commit').forEach(a => a.addEventListener('click', e => {
+    e.preventDefault();
+    navigate('pulls', 3, { id, sha: a.dataset.sha });
+  }));
+}
+
+function renderCommitDetail(main, breadcrumb, id, sha) {
+  const pr = data.pulls[id];
+  const c = pr?.commits.find(x => x.sha === sha);
+  if (!c) { main.innerHTML = '<p>Commit 不存在</p>'; return; }
+  view.params = { id, sha };
+  main.innerHTML = breadcrumb + `
+    <div class="border border-gh-200 dark:border-[#30363d] rounded-md bg-white dark:bg-[#0d1117]">
+      <div class="p-4 border-b border-gh-200 dark:border-[#30363d]">
+        <h2 class="text-lg font-semibold"><i class="fa fa-commit text-gh-500"></i> ${escapeHtml(c.title)}</h2>
+        <div class="text-xs text-gh-500 mt-2">
+          <span class="font-mono">${c.sha}</span> · ${escapeHtml(c.author)} · ${c.createdAt.slice(0, 10)}
+        </div>
+      </div>
+      <div class="p-4 space-y-3">
+        <h3 class="text-sm font-semibold">改动的文件</h3>
+        <ul class="text-sm space-y-1">
+          <li><i class="fa fa-file-text-o text-gh-500"></i> README.md</li>
+          <li><i class="fa fa-file-text-o text-gh-500"></i> docs/index.md</li>
+        </ul>
+        <h3 class="text-sm font-semibold">Diff (演示)</h3>
+        <pre class="font-mono text-xs bg-gh-50 dark:bg-[#0d1117] p-3 rounded overflow-x-auto"><span class="text-[#1a7f37]">@@ -1,3 +1,4 @@</span>
+<span class="text-[#1a7f37]">+## Resources</span>
+<span class="text-[#1a7f37]">+</span>
+<span class="text-[#1a7f37]">+- [GitHub Skills](https://skills.github.com)</span>
+ <span class="text-gh-500"> # my-first-repo</span></pre>
+      </div>
+    </div>
+  `;
+}
