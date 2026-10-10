@@ -2032,3 +2032,91 @@ document.addEventListener('click', e => {
   if (dd && !dd.classList.contains('hidden') && !dd.contains(e.target) && e.target !== inp) closeSearch();
 });
 
+// ============ Onboarding ============
+let onboardingStep = 0;
+
+function showOnboarding() {
+  if (localStorage.getItem('gh-guide-onboarded') === '1') return;
+  onboardingStep = 1;
+  renderOnboardingStep();
+  $('#onboardingOverlay')?.classList.remove('hidden');
+}
+
+function closeOnboarding() {
+  $('#onboardingOverlay')?.classList.add('hidden');
+  localStorage.setItem('gh-guide-onboarded', '1');
+}
+
+function nextOnboardingStep() {
+  onboardingStep++;
+  renderOnboardingStep();
+}
+
+function renderOnboardingStep() {
+  const card = $('#onboardingCard');
+  const highlight = $('#onboardingHighlight');
+  const tooltip = $('#onboardingTooltip');
+  if (!card || !highlight || !tooltip) return;
+
+  if (onboardingStep === 1) {
+    highlight.classList.add('hidden');
+    tooltip.classList.add('hidden');
+    card.classList.remove('hidden');
+    card.innerHTML = `
+      <div class="text-center">
+        <div class="text-6xl mb-4">🎉</div>
+        <h2 class="text-xl font-bold mb-2">欢迎来到 GitHub 新手探索站！</h2>
+        <p class="text-sm text-gh-500 mb-6">接下来 3 步，我会带你认识这个界面。</p>
+        <button id="obStart" class="btn btn-primary">开始</button>
+      </div>
+    `;
+    $('#obStart').onclick = nextOnboardingStep;
+  } else if (onboardingStep === 2) {
+    card.classList.add('hidden');
+    highlight.classList.remove('hidden');
+    tooltip.classList.remove('hidden');
+    const nav = document.querySelector('header');
+    const r = nav?.getBoundingClientRect();
+    if (r) {
+      highlight.style.top = r.top + 'px';
+      highlight.style.left = r.left + 'px';
+      highlight.style.width = r.width + 'px';
+      highlight.style.height = r.height + 'px';
+    }
+    $('#onboardingTooltipText').textContent = '这里是导航栏。5 个菜单 + 搜索框 + 头像，每个都可以点。';
+    if (r) {
+      tooltip.style.top = (r.bottom + 8) + 'px';
+      tooltip.style.left = '50%';
+      tooltip.style.transform = 'translateX(-50%)';
+    }
+    $('#onboardingNext').textContent = '下一步';
+    $('#onboardingNext').onclick = nextOnboardingStep;
+  } else if (onboardingStep === 3) {
+    card.classList.add('hidden');
+    highlight.classList.remove('hidden');
+    tooltip.classList.remove('hidden');
+    const tabBar = document.querySelectorAll('nav button')[0]?.parentElement;
+    const r = tabBar?.getBoundingClientRect();
+    if (r) {
+      highlight.style.top = r.top + 'px';
+      highlight.style.left = r.left + 'px';
+      highlight.style.width = r.width + 'px';
+      highlight.style.height = r.height + 'px';
+    }
+    $('#onboardingTooltipText').textContent = '8 个 Tab 是仓库的不同功能视图。最常用是 Code / Issues / Pull requests。';
+    if (r) {
+      tooltip.style.top = (r.bottom + 8) + 'px';
+      tooltip.style.left = '50%';
+      tooltip.style.transform = 'translateX(-50%)';
+    }
+    $('#onboardingNext').textContent = '开始学习';
+    $('#onboardingNext').onclick = () => {
+      closeOnboarding();
+      showToast('🎉 引导完成！开始你的第一个任务', 'success');
+    };
+  }
+}
+
+// 触发：用 setTimeout 确保 DOM 准备好
+setTimeout(() => showOnboarding(), 1000);
+
