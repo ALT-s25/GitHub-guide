@@ -476,7 +476,10 @@ function bindGlobal() {
   $('#faqBackdrop').addEventListener('click', () => closePanel('faqPanel'));
 
   // 主题
-  $('#themeToggle').addEventListener('click', toggleTheme);
+  $('#themeToggle').addEventListener('click', () => {
+    toggleTheme();
+    completeTask('t7');
+  });
 
   // 重置
   $('#resetBtn').addEventListener('click', () => $('#resetModal').classList.remove('hidden'));
@@ -652,6 +655,7 @@ function defaultData() {
       '.gitignore': { path: '.gitignore', size: '64 B', lines: 4, lastModified: '5 days ago', content: 'node_modules/\n.DS_Store\n*.log\n.env' },
       'package.json': { path: 'package.json', size: '210 B', lines: 12, lastModified: '4 days ago', content: '{\n  "name": "my-first-repo",\n  "version": "1.0.0",\n  "description": "学习 GitHub 用",\n  "main": "index.js",\n  "scripts": {\n    "start": "node index.js"\n  }\n}' },
     },
+    taskProgress: { current: 0, completed: [] },
   };
 }
 
@@ -674,6 +678,64 @@ function saveData() {
 }
 
 let data = loadData();
+window._initialRepoName = data.repo.name;
+
+// ============ 任务挑战系统 ============
+function getTaskProgress() {
+  return data.taskProgress || { current: 0, completed: [] };
+}
+
+function saveTaskProgress() {
+  saveData();
+}
+
+function completeTask(taskId) {
+  const tp = getTaskProgress();
+  if (tp.completed.includes(taskId)) return;
+  tp.completed.push(taskId);
+  const idx = TASKS.findIndex(t => t.id === taskId);
+  if (idx === tp.current) tp.current = idx + 1;
+  data.taskProgress = tp;
+  saveTaskProgress();
+  showToast(`🎉 任务 ${idx + 1} 完成！`, 'success');
+  renderTaskSidebar();
+  checkAutoComplete();
+}
+
+function checkAutoComplete() {
+  if (!getTaskProgress().completed.includes('t1') && localStorage.getItem('gh-guide-onboarded') === '1') {
+    completeTask('t1');
+  }
+  if (!getTaskProgress().completed.includes('t2') && view.tab === 'code' && view.level >= 2 && view.params.path === 'README.md') {
+    completeTask('t2');
+  }
+  if (!getTaskProgress().completed.includes('t5') && data.repo.name !== (window._initialRepoName || 'my-first-repo')) {
+    completeTask('t5');
+  }
+}
+
+function renderTaskSidebar() {
+  const container = $('#taskSidebarList');
+  if (!container) return;
+  const tp = getTaskProgress();
+  container.innerHTML = TASKS.map((t, i) => {
+    const isDone = tp.completed.includes(t.id);
+    const isCurrent = i === tp.current;
+    const isLocked = i > tp.current;
+    return `
+      <div class="task-item p-2 rounded text-xs ${isCurrent ? 'bg-[#0969da] text-white mentor-pulse' : isDone ? 'opacity-50' : isLocked ? 'opacity-40' : ''}">
+        <div class="flex items-start gap-2">
+          <i class="fa ${isDone ? 'fa-check-circle text-green-400' : isLocked ? 'fa-lock text-gh-400' : t.icon} mt-0.5"></i>
+          <div class="flex-1 min-w-0">
+            <div class="font-semibold">${i + 1}. ${escapeHtml(t.title)}</div>
+            <div class="${isCurrent ? 'text-white/80' : 'text-gh-500'} text-xs">${escapeHtml(t.desc)}</div>
+            ${isCurrent ? `<div class="mt-1 ${isCurrent ? 'text-white/90' : ''}">💡 ${escapeHtml(t.hint)}</div>` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
 
 // 通用 mutator：mutate('issues.1.state', 'closed') 或 mutate('repo.name', 'foo')
 function mutate(path, value) {
@@ -750,6 +812,7 @@ function navigate(tab, level, params = {}) {
   renderTabContent(tab);
   renderBreadcrumb();
   window.scrollTo(0, 0);
+  checkAutoComplete();
 }
 
 function goBack() {
@@ -980,6 +1043,7 @@ function renderIssueDetail(main, breadcrumb, id) {
     const cid = Date.now();
     issue.comments.push({ id: cid, author: 'ALT-s25', body, createdAt: new Date().toISOString() });
     saveData();
+    completeTask('t3');
     showToast('评论已发布', 'success');
     navigate('issues', 2, { id });
   });
@@ -1138,6 +1202,7 @@ function renderPrDetail(main, breadcrumb, id) {
   $('#approvePr')?.addEventListener('click', () => {
     pr.reviews.push({ reviewer: 'ALT-s25', status: 'approved', createdAt: new Date().toISOString() });
     saveData();
+    completeTask('t4');
     showToast('已 Approve', 'success');
     navigate('pulls', 2, { id });
   });
@@ -2024,7 +2089,10 @@ function closeSearch() {
 
 // 绑定
 $('#searchInput')?.addEventListener('focus', e => renderSearchResults(e.target.value));
-$('#searchInput')?.addEventListener('input', e => renderSearchResults(e.target.value));
+$('#searchInput')?.addEventListener('input', e => {
+  renderSearchResults(e.target.value);
+  if (e.target.value && e.target.value.trim()) completeTask('t6');
+});
 $('#searchInput')?.addEventListener('keydown', e => { if (e.key === 'Escape') closeSearch(); });
 document.addEventListener('click', e => {
   const dd = $('#searchDropdown');
@@ -2119,4 +2187,16 @@ function renderOnboardingStep() {
 
 // 触发：用 setTimeout 确保 DOM 准备好
 setTimeout(() => showOnboarding(), 1000);
+
+// 重看引导按钮
+$('#replayOnboarding')?.addEventListener('click', () => {
+  localStorage.removeItem('gh-guide-onboarded');
+  showOnboarding();
+});
+
+// 任务挑战系统初始化
+setTimeout(() => {
+  renderTaskSidebar();
+  checkAutoComplete();
+}, 500);
 

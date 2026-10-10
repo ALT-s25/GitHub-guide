@@ -614,6 +614,45 @@ const taskChapters = [
   }
 ];
 
+// ============ 任务挑战（线性任务系统）============
+const TASKS = [
+  {
+    id: 't1', title: '认识 GitHub 界面', desc: '看完引导介绍', icon: 'fa-compass',
+    hint: '你刚刚完成了引导！',
+    validate: () => true,
+  },
+  {
+    id: 't2', title: '查看仓库 README', desc: '点 Code → 点 README.md', icon: 'fa-book',
+    hint: 'README.md 是项目的说明书。点 Code Tab，再点 README.md 文件名。',
+    target: { tab: 'code', level: 2, params: { path: 'README.md' } },
+  },
+  {
+    id: 't3', title: '给 Issue 加评论', desc: '在任意 Issue 下评论', icon: 'fa-comment',
+    hint: 'Issues 是讨论区。点 Issues Tab → 选一个 → 在下方输入评论 → 点评论按钮。',
+    target: { action: 'comment' },
+  },
+  {
+    id: 't4', title: 'Approve 一个 PR', desc: 'Approve 任意 PR', icon: 'fa-check',
+    hint: 'PR 是代码合并请求。点 Pull requests Tab → 选一个 → 点绿色 Approve 按钮。',
+    target: { action: 'approve-pr' },
+  },
+  {
+    id: 't5', title: '修改仓库名', desc: '在 Settings 改仓库名', icon: 'fa-pencil',
+    hint: 'Settings 是设置。点 Settings Tab → General → 改仓库名 → Save changes。',
+    target: { action: 'save-repo-name' },
+  },
+  {
+    id: 't6', title: '用搜索找东西', desc: '搜索一个关键字', icon: 'fa-search',
+    hint: '顶部搜索框支持搜 Issues / PRs / 文件名。输入"first"试试。',
+    target: { action: 'search' },
+  },
+  {
+    id: 't7', title: '切换暗色模式', desc: '点右上月亮图标', icon: 'fa-moon',
+    hint: 'GitHub 也支持暗色。点右上角 🌓 按钮切换。',
+    target: { action: 'toggle-theme' },
+  },
+];
+
 // ============ Git 命令速查 ============
 const commands = [
   { cmd: 'git init', desc: '把当前目录初始化为 Git 仓库（生成 .git 目录）', chapter: '起步' },
