@@ -127,13 +127,18 @@ tailwind.config = {
 <!-- ========== 模拟 GitHub 顶部导航 ========== -->
 <header class="bg-[#24292f] dark:bg-[#010409] border-b border-[#444c56]">
   <div class="max-w-screen-2xl mx-auto px-4 h-16 flex items-center gap-4">
+    <!-- 汉堡按钮（仅 < 768px 显示） -->
+    <button id="hamburgerBtn" class="md:hidden w-9 h-9 rounded-md hover:bg-white/10 flex items-center justify-center text-white/80" aria-label="打开菜单">
+      <i class="fa fa-bars text-lg"></i>
+    </button>
+
     <!-- Logo -->
     <a href="#" class="learnable flex items-center gap-2 text-white pr-2" data-learnable="logo">
       <i class="fa fa-github text-3xl"></i>
     </a>
 
     <!-- 主导航（悬停展开下拉菜单） -->
-    <nav class="flex items-center gap-1 text-sm font-semibold text-white/80">
+    <nav class="hidden md:flex items-center gap-1 text-sm font-semibold text-white/80">
       <div class="dropdown relative group">
         <a href="#" class="learnable px-3 py-2 rounded-md hover:bg-white/10 inline-block" data-learnable="nav-product">Product <i class="fa fa-caret-down text-xs ml-1"></i></a>
         <div class="hidden group-hover:block absolute left-0 top-full pt-1 z-30 w-56">
@@ -464,6 +469,84 @@ tailwind.config = {
       <button id="confirmReset" class="btn btn-danger">确认重置</button>
     </div>
   </div>
+</div>
+
+<!-- ========== 移动端导航抽屉（< 768px） ========== -->
+<div id="mobileMenu" class="hidden fixed inset-0 z-50 bg-white dark:bg-[#0d1117] overflow-y-auto">
+  <div class="flex items-center justify-between px-4 h-16 border-b border-gh-200 dark:border-[#30363d] bg-[#24292f] dark:bg-[#010409]">
+    <a href="#" class="learnable flex items-center gap-2 text-white" data-learnable="logo">
+      <i class="fa fa-github text-2xl"></i>
+    </a>
+    <button id="mobileMenuClose" class="w-9 h-9 rounded-md hover:bg-white/10 flex items-center justify-center text-white/80" aria-label="关闭菜单">
+      <i class="fa fa-times text-xl"></i>
+    </button>
+  </div>
+  <nav id="mobileMenuNav" class="p-4 space-y-1 text-[#24292f] dark:text-[#c9d1d9]">
+    <!-- Product -->
+    <div class="mobile-dropdown" data-dropdown="Product">
+      <button class="mobile-dropdown-toggle w-full flex items-center justify-between px-3 py-3 rounded-md hover:bg-gh-100 dark:hover:bg-[#161b22] font-semibold">
+        <span><i class="fa fa-cube text-gh-500 w-5"></i> Product</span>
+        <i class="fa fa-chevron-down text-xs text-gh-400 transition-transform"></i>
+      </button>
+      <div class="mobile-dropdown-panel hidden pl-4 space-y-1">
+        <a href="#" class="block px-3 py-2 rounded-md hover:bg-gh-100 dark:hover:bg-[#161b22] text-sm" data-nav-id="nav-product-repo"><i class="fa fa-book text-gh-500 w-5"></i> 代码托管（Repo）</a>
+        <a href="#" class="block px-3 py-2 rounded-md hover:bg-gh-100 dark:hover:bg-[#161b22] text-sm" data-nav-id="nav-product-actions"><i class="fa fa-play text-gh-500 w-5"></i> Actions 自动化</a>
+        <a href="#" class="block px-3 py-2 rounded-md hover:bg-gh-100 dark:hover:bg-[#161b22] text-sm" data-nav-id="nav-product-copilot"><i class="fa fa-magic text-gh-500 w-5"></i> Copilot AI</a>
+        <a href="#" class="block px-3 py-2 rounded-md hover:bg-gh-100 dark:hover:bg-[#161b22] text-sm" data-nav-id="nav-product-security"><i class="fa fa-shield text-gh-500 w-5"></i> 安全扫描</a>
+      </div>
+    </div>
+    <!-- Solutions -->
+    <div class="mobile-dropdown" data-dropdown="Solutions">
+      <button class="mobile-dropdown-toggle w-full flex items-center justify-between px-3 py-3 rounded-md hover:bg-gh-100 dark:hover:bg-[#161b22] font-semibold">
+        <span><i class="fa fa-lightbulb-o text-gh-500 w-5"></i> Solutions</span>
+        <i class="fa fa-chevron-down text-xs text-gh-400 transition-transform"></i>
+      </button>
+      <div class="mobile-dropdown-panel hidden pl-4 space-y-1">
+        <a href="#" class="block px-3 py-2 rounded-md hover:bg-gh-100 dark:hover:bg-[#161b22] text-sm" data-nav-id="nav-sol-team"><i class="fa fa-users text-gh-500 w-5"></i> 团队协作</a>
+        <a href="#" class="block px-3 py-2 rounded-md hover:bg-gh-100 dark:hover:bg-[#161b22] text-sm" data-nav-id="nav-sol-edu"><i class="fa fa-graduation-cap text-gh-500 w-5"></i> 教育</a>
+        <a href="#" class="block px-3 py-2 rounded-md hover:bg-gh-100 dark:hover:bg-[#161b22] text-sm" data-nav-id="nav-sol-game"><i class="fa fa-gamepad text-gh-500 w-5"></i> 游戏开发</a>
+      </div>
+    </div>
+    <!-- Resources -->
+    <div class="mobile-dropdown" data-dropdown="Resources">
+      <button class="mobile-dropdown-toggle w-full flex items-center justify-between px-3 py-3 rounded-md hover:bg-gh-100 dark:hover:bg-[#161b22] font-semibold">
+        <span><i class="fa fa-book text-gh-500 w-5"></i> Resources</span>
+        <i class="fa fa-chevron-down text-xs text-gh-400 transition-transform"></i>
+      </button>
+      <div class="mobile-dropdown-panel hidden pl-4 space-y-1">
+        <a href="#" class="block px-3 py-2 rounded-md hover:bg-gh-100 dark:hover:bg-[#161b22] text-sm" data-nav-id="nav-res-docs"><i class="fa fa-book text-gh-500 w-5"></i> 技术文档</a>
+        <a href="#" class="block px-3 py-2 rounded-md hover:bg-gh-100 dark:hover:bg-[#161b22] text-sm" data-nav-id="nav-res-blog"><i class="fa fa-newspaper-o text-gh-500 w-5"></i> 官方博客</a>
+        <a href="#" class="block px-3 py-2 rounded-md hover:bg-gh-100 dark:hover:bg-[#161b22] text-sm" data-nav-id="nav-res-community"><i class="fa fa-comments text-gh-500 w-5"></i> 社区论坛</a>
+        <a href="#" class="block px-3 py-2 rounded-md hover:bg-gh-100 dark:hover:bg-[#161b22] text-sm" data-nav-id="nav-res-skills"><i class="fa fa-graduation-cap text-gh-500 w-5"></i> Skills 互动课</a>
+      </div>
+    </div>
+    <!-- Open Source -->
+    <div class="mobile-dropdown" data-dropdown="Open Source">
+      <button class="mobile-dropdown-toggle w-full flex items-center justify-between px-3 py-3 rounded-md hover:bg-gh-100 dark:hover:bg-[#161b22] font-semibold">
+        <span><i class="fa fa-code text-gh-500 w-5"></i> Open Source</span>
+        <i class="fa fa-chevron-down text-xs text-gh-400 transition-transform"></i>
+      </button>
+      <div class="mobile-dropdown-panel hidden pl-4 space-y-1">
+        <a href="#" class="block px-3 py-2 rounded-md hover:bg-gh-100 dark:hover:bg-[#161b22] text-sm" data-nav-id="nav-os-explore"><i class="fa fa-compass text-gh-500 w-5"></i> Explore</a>
+        <a href="#" class="block px-3 py-2 rounded-md hover:bg-gh-100 dark:hover:bg-[#161b22] text-sm" data-nav-id="nav-os-topics"><i class="fa fa-tag text-gh-500 w-5"></i> Topics 话题</a>
+        <a href="#" class="block px-3 py-2 rounded-md hover:bg-gh-100 dark:hover:bg-[#161b22] text-sm" data-nav-id="nav-os-trending"><i class="fa fa-fire text-gh-500 w-5"></i> Trending 趋势</a>
+      </div>
+    </div>
+    <!-- Enterprise -->
+    <div class="mobile-dropdown" data-dropdown="Enterprise">
+      <button class="mobile-dropdown-toggle w-full flex items-center justify-between px-3 py-3 rounded-md hover:bg-gh-100 dark:hover:bg-[#161b22] font-semibold">
+        <span><i class="fa fa-building text-gh-500 w-5"></i> Enterprise</span>
+        <i class="fa fa-chevron-down text-xs text-gh-400 transition-transform"></i>
+      </button>
+      <div class="mobile-dropdown-panel hidden pl-4 space-y-1">
+        <a href="#" class="block px-3 py-2 rounded-md hover:bg-gh-100 dark:hover:bg-[#161b22] text-sm" data-nav-id="nav-ent-platform"><i class="fa fa-building text-gh-500 w-5"></i> 企业平台</a>
+        <a href="#" class="block px-3 py-2 rounded-md hover:bg-gh-100 dark:hover:bg-[#161b22] text-sm" data-nav-id="nav-ent-security"><i class="fa fa-lock text-gh-500 w-5"></i> 企业级安全</a>
+        <a href="#" class="block px-3 py-2 rounded-md hover:bg-gh-100 dark:hover:bg-[#161b22] text-sm" data-nav-id="nav-ent-ai"><i class="fa fa-rocket text-gh-500 w-5"></i> Enterprise AI</a>
+      </div>
+    </div>
+    <!-- Pricing -->
+    <a href="#" id="mobileMenuPricing" class="learnable block px-3 py-3 rounded-md hover:bg-gh-100 dark:hover:bg-[#161b22] font-semibold" data-learnable="nav-pricing"><i class="fa fa-tag text-gh-500 w-5"></i> Pricing</a>
+  </nav>
 </div>
 
 <script src="data.js"></script>

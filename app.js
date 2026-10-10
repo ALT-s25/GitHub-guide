@@ -509,8 +509,63 @@ function bindGlobal() {
       if (!$('#cheatPanel').classList.contains('hidden')) closePanel('cheatPanel');
       if (!$('#resourcesPanel').classList.contains('hidden')) closePanel('resourcesPanel');
       if (!$('#faqPanel').classList.contains('hidden')) closePanel('faqPanel');
+      if (!$('#mobileMenu').classList.contains('hidden')) closeMobileMenu();
     }
   });
+
+  // 移动端菜单
+  $('#hamburgerBtn')?.addEventListener('click', openMobileMenu);
+  $('#mobileMenuClose')?.addEventListener('click', closeMobileMenu);
+
+  // 移动端 dropdown 展开/收起
+  $$('.mobile-dropdown-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const panel = btn.nextElementSibling;
+      if (!panel) return;
+      const isOpen = !panel.classList.contains('hidden');
+      // 关闭所有其他 dropdown
+      $$('.mobile-dropdown-panel').forEach(p => p.classList.add('hidden'));
+      $$('.mobile-dropdown-toggle .fa-chevron-down').forEach(c => c.classList.remove('rotate-180'));
+      if (!isOpen) {
+        panel.classList.remove('hidden');
+        const chevron = btn.querySelector('.fa-chevron-down');
+        if (chevron) chevron.classList.add('rotate-180');
+      }
+    });
+  });
+
+  // 移动端子项点击：跳转后关闭 drawer
+  $$('#mobileMenu [data-nav-id]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const navId = a.dataset.navId;
+      if (!navId) return;
+      navigate('nav', 2, { navId });
+      closeMobileMenu();
+    });
+  });
+
+  // Pricing 链接点击：弹出学习卡
+  $('#mobileMenuPricing')?.addEventListener('click', e => {
+    e.preventDefault();
+    showLearnModal('nav-pricing');
+    closeMobileMenu();
+  });
+}
+
+// ============ 移动端菜单 ============
+function openMobileMenu() {
+  const menu = $('#mobileMenu');
+  if (!menu) return;
+  menu.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeMobileMenu() {
+  const menu = $('#mobileMenu');
+  if (!menu) return;
+  menu.classList.add('hidden');
+  document.body.style.overflow = '';
 }
 
 function openTasksDrawer() {
