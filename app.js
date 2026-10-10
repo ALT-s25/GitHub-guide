@@ -480,6 +480,10 @@ function bindGlobal() {
     toggleTheme();
     completeTask('t7');
   });
+  $('#themeToggleTop')?.addEventListener('click', () => {
+    toggleTheme();
+    completeTask('t7');
+  });
 
   // 重置
   $('#resetBtn').addEventListener('click', () => $('#resetModal').classList.remove('hidden'));
