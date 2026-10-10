@@ -191,12 +191,12 @@ tailwind.config = {
     </nav>
 
     <!-- 搜索框 -->
-    <div class="flex-1 max-w-2xl ml-4">
-      <div class="learnable relative" data-learnable="search">
-        <input type="text" placeholder="Search or jump to..." class="w-full pl-9 pr-3 py-1.5 text-sm rounded-md bg-[#24292f] dark:bg-[#0d1117] border border-[#444c56] text-white placeholder-white/50 focus:border-white/40 focus:outline-none">
-        <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-white/50 text-sm"></i>
-        <span class="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-white/60 border border-white/30 rounded px-1.5">/</span>
-      </div>
+    <div class="relative flex-1 max-w-xl">
+      <input id="searchInput" type="text" placeholder="Search or jump to..." autocomplete="off" class="learnable w-full pl-9 pr-3 py-1.5 text-sm rounded-md bg-[#24292f] dark:bg-[#0d1117] border border-[#444c56] text-white placeholder-white/50 focus:border-white/40 focus:outline-none" data-learnable="search">
+      <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-white/50 text-sm"></i>
+      <span class="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-white/60 border border-white/30 rounded px-1.5">/</span>
+      <!-- 搜索下拉 -->
+      <div id="searchDropdown" class="hidden absolute left-0 right-0 top-full mt-1 bg-white dark:bg-[#161b22] rounded-md shadow-lg border border-gh-200 dark:border-[#30363d] text-gh-700 dark:text-gh-200 max-h-[60vh] overflow-y-auto z-50"></div>
     </div>
 
     <!-- 右侧操作 -->

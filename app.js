@@ -1911,3 +1911,69 @@ function renderInsightsContributor(main, breadcrumb, name) {
   `;
 }
 
+// ============ 搜索 ============
+function runSearch(query) {
+  if (!query) return { code: [], issues: [], pulls: [] };
+  const q = query.toLowerCase();
+  const code = Object.keys(data.files || {}).filter(p => p.toLowerCase().includes(q)).slice(0, 5);
+  const issues = Object.values(data.issues || {}).filter(i => i.title.toLowerCase().includes(q)).slice(0, 5);
+  const pulls = Object.values(data.pulls || {}).filter(p => p.title.toLowerCase().includes(q)).slice(0, 5);
+  return { code, issues, pulls };
+}
+
+function renderSearchResults(query) {
+  const dd = $('#searchDropdown');
+  if (!dd) return;
+  if (!query) {
+    dd.innerHTML = '<div class="p-3 text-xs text-gh-500">输入关键字搜索 Issues、PRs、文件</div>';
+    dd.classList.remove('hidden');
+    return;
+  }
+  const r = runSearch(query);
+  const total = r.code.length + r.issues.length + r.pulls.length;
+  if (total === 0) {
+    dd.innerHTML = `<div class="p-3 text-xs text-gh-500">未找到与 "${escapeHtml(query)}" 相关的内容</div>`;
+    dd.classList.remove('hidden');
+    return;
+  }
+  let html = '';
+  if (r.code.length) {
+    html += '<div class="px-3 py-1 text-xs font-semibold text-gh-500 bg-gh-50 dark:bg-[#0d1117]">📄 Code</div>';
+    html += r.code.map(p => `<button class="search-result block w-full text-left px-3 py-2 hover:bg-gh-50 dark:hover:bg-[#21262d] text-sm" data-type="code" data-path="${escapeHtml(p)}"><i class="fa fa-file-text-o text-gh-500 w-5"></i> ${escapeHtml(p)}</button>`).join('');
+  }
+  if (r.issues.length) {
+    html += '<div class="px-3 py-1 text-xs font-semibold text-gh-500 bg-gh-50 dark:bg-[#0d1117]">⚠️ Issues</div>';
+    html += r.issues.map(i => `<button class="search-result block w-full text-left px-3 py-2 hover:bg-gh-50 dark:hover:bg-[#21262d] text-sm" data-type="issue" data-id="${i.id}"><i class="fa fa-exclamation-circle text-gh-500 w-5"></i> ${escapeHtml(i.title)}</button>`).join('');
+  }
+  if (r.pulls.length) {
+    html += '<div class="px-3 py-1 text-xs font-semibold text-gh-500 bg-gh-50 dark:bg-[#0d1117]">⤴️ Pull requests</div>';
+    html += r.pulls.map(p => `<button class="search-result block w-full text-left px-3 py-2 hover:bg-gh-50 dark:hover:bg-[#21262d] text-sm" data-type="pr" data-id="${p.id}"><i class="fa fa-git-pull-request text-gh-500 w-5"></i> ${escapeHtml(p.title)}</button>`).join('');
+  }
+  html += `<div class="px-3 py-1 text-xs text-gh-400 border-t border-gh-200 dark:border-[#30363d]">共 ${total} 条结果</div>`;
+  dd.innerHTML = html;
+  dd.classList.remove('hidden');
+  $$('.search-result').forEach(b => b.addEventListener('click', () => {
+    const t = b.dataset.type;
+    if (t === 'code') navigate('code', 2, { path: b.dataset.path });
+    else if (t === 'issue') navigate('issues', 2, { id: b.dataset.id });
+    else if (t === 'pr') navigate('pulls', 2, { id: b.dataset.id });
+    closeSearch();
+  }));
+}
+
+function closeSearch() {
+  $('#searchDropdown')?.classList.add('hidden');
+  const inp = $('#searchInput');
+  if (inp) inp.value = '';
+}
+
+// 绑定
+$('#searchInput')?.addEventListener('focus', e => renderSearchResults(e.target.value));
+$('#searchInput')?.addEventListener('input', e => renderSearchResults(e.target.value));
+$('#searchInput')?.addEventListener('keydown', e => { if (e.key === 'Escape') closeSearch(); });
+document.addEventListener('click', e => {
+  const dd = $('#searchDropdown');
+  const inp = $('#searchInput');
+  if (dd && !dd.classList.contains('hidden') && !dd.contains(e.target) && e.target !== inp) closeSearch();
+});
+
