@@ -162,7 +162,7 @@ function bindTabs() {
   });
   // 默认激活 code
   document.querySelector('[data-tab="code"]')?.classList.add('tab-active');
-  renderTabContent('code');
+  navigate('code', 1, {});
 }
 
 // ============ 知识卡片弹窗 ============
@@ -843,6 +843,40 @@ function navigate(tab, level, params = {}) {
   renderBreadcrumb();
   window.scrollTo(0, 0);
   checkAutoComplete();
+  applyCurrentTaskPulse();
+}
+
+let pulseTarget = null;
+function clearMentorPulse() {
+  if (pulseTarget) {
+    pulseTarget.classList.remove('mentor-pulse', 'mentor-pulse-target');
+    pulseTarget = null;
+  }
+}
+function applyMentorPulse(selector) {
+  clearMentorPulse();
+  const el = typeof selector === 'string' ? $(selector) : selector;
+  if (!el) return;
+  el.classList.add('mentor-pulse', 'mentor-pulse-target');
+  pulseTarget = el;
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+function applyCurrentTaskPulse() {
+  const tp = getTaskProgress();
+  if (tp.completed.length >= TASKS.length) return;
+  const current = TASKS[tp.current];
+  if (!current) return;
+  if (current.id === 't2' && view.tab === 'code' && view.level === 1) {
+    setTimeout(() => applyMentorPulse('.nav-to-file[data-path="README.md"]'), 200);
+  } else if (current.id === 't3' && view.tab === 'issues' && view.level === 2) {
+    setTimeout(() => applyMentorPulse('#newCommentBody'), 200);
+  } else if (current.id === 't4' && view.tab === 'pulls' && view.level === 2) {
+    setTimeout(() => applyMentorPulse('#approvePr'), 200);
+  } else if (current.id === 't5' && view.tab === 'settings' && view.params.setting === 'general') {
+    setTimeout(() => applyMentorPulse('#repoName'), 200);
+  } else if (current.id === 't6' && view.tab === 'code' && view.level === 1) {
+    setTimeout(() => applyMentorPulse('#searchInput'), 200);
+  }
 }
 
 function goBack() {

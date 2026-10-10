@@ -583,6 +583,22 @@ tailwind.config = {
   <div class="w-12 h-12 rounded-full bg-[#0969da] text-white flex items-center justify-center text-2xl shadow-lg hover:scale-110 transition">🐙</div>
 </div>
 
+<style>
+@keyframes mentor-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(9, 105, 218, 0.7); transform: scale(1); }
+  50% { box-shadow: 0 0 0 8px rgba(9, 105, 218, 0); transform: scale(1.05); }
+}
+.mentor-pulse {
+  animation: mentor-pulse 1.5s ease-in-out infinite;
+  position: relative;
+}
+.mentor-pulse-target {
+  outline: 3px solid #0969da;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+</style>
+
 <script src="data.js"></script>
 <script src="app.js"></script>
 </body>
