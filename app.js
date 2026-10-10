@@ -689,6 +689,33 @@ function saveTaskProgress() {
   saveData();
 }
 
+// ============ 导师熊猫 ============
+let mentorHideTimer = null;
+function showMentorHint(text, duration = 6000) {
+  const bubble = $('#mentorBubble');
+  const textEl = $('#mentorBubbleText');
+  if (!bubble || !textEl) return;
+  textEl.textContent = text;
+  bubble.classList.remove('hidden');
+  if (mentorHideTimer) clearTimeout(mentorHideTimer);
+  mentorHideTimer = setTimeout(() => bubble.classList.add('hidden'), duration);
+}
+
+$('#mentor')?.addEventListener('mouseenter', () => {
+  if (mentorHideTimer) clearTimeout(mentorHideTimer);
+  $('#mentorBubble')?.classList.remove('hidden');
+});
+$('#mentor')?.addEventListener('mouseleave', () => {
+  mentorHideTimer = setTimeout(() => $('#mentorBubble')?.classList.add('hidden'), 1500);
+});
+
+$('#mentor')?.addEventListener('click', () => {
+  const tp = getTaskProgress();
+  const current = TASKS[tp.current];
+  if (current) showMentorHint(`💡 当前任务: ${current.title} - ${current.hint}`, 8000);
+  else showMentorHint('🎉 你已完成所有任务！可以自由探索 GitHub 的其他功能了。', 8000);
+});
+
 function completeTask(taskId) {
   const tp = getTaskProgress();
   if (tp.completed.includes(taskId)) return;
@@ -700,6 +727,9 @@ function completeTask(taskId) {
   showToast(`🎉 任务 ${idx + 1} 完成！`, 'success');
   renderTaskSidebar();
   checkAutoComplete();
+  // 通知导师熊猫更新旁白
+  const nextTask = TASKS[tp.current];
+  if (nextTask) showMentorHint(`🎯 下一个任务: ${nextTask.title} - ${nextTask.desc}`, 7000);
 }
 
 function checkAutoComplete() {
@@ -2181,6 +2211,7 @@ function renderOnboardingStep() {
     $('#onboardingNext').onclick = () => {
       closeOnboarding();
       showToast('🎉 引导完成！开始你的第一个任务', 'success');
+      showMentorHint('🪐 引导完成。点我头像可以随时问我问题！', 8000);
     };
   }
 }
