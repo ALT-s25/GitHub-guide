@@ -62,8 +62,6 @@ github-guide/
 
 - [ ] 扩展 Actions / Projects / Security / Insights 4 个 Tab 到多层
 - [ ] 顶部导航 17 个子菜单项独立成可进入的页面
-- [ ] 添加搜索功能
-- [ ] 移动端适配
 
 ## License
 
