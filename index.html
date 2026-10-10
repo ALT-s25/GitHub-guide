@@ -127,8 +127,8 @@ tailwind.config = {
 <!-- ========== 模拟 GitHub 顶部导航 ========== -->
 <header class="bg-[#24292f] dark:bg-[#010409] border-b border-[#444c56]">
   <div class="max-w-screen-2xl mx-auto px-4 h-16 flex items-center gap-4">
-    <!-- 汉堡按钮（仅 < 768px 显示） -->
-    <button id="hamburgerBtn" class="md:hidden w-9 h-9 rounded-md hover:bg-white/10 flex items-center justify-center text-white/80" aria-label="打开菜单">
+    <!-- 汉堡按钮（桌面 + 移动端均显示） -->
+    <button id="hamburgerBtn" class="w-9 h-9 rounded-md hover:bg-white/10 flex items-center justify-center text-white/80" aria-label="打开菜单">
       <i class="fa fa-bars text-lg"></i>
     </button>
 
@@ -137,8 +137,8 @@ tailwind.config = {
       <i class="fa fa-github text-3xl"></i>
     </a>
 
-    <!-- 主导航（悬停展开下拉菜单） -->
-    <nav class="hidden md:flex items-center gap-1 text-sm font-semibold text-white/80">
+    <!-- 原横向导航（5 dropdown + Pricing）已并入汉堡菜单，整体隐藏 -->
+    <nav class="hidden items-center gap-1 text-sm font-semibold text-white/80" id="legacyTopNav">
       <div class="dropdown relative group">
         <a href="#" class="learnable px-3 py-2 rounded-md hover:bg-white/10 inline-block" data-learnable="nav-product">Product <i class="fa fa-caret-down text-xs ml-1"></i></a>
         <div class="hidden group-hover:block absolute left-0 top-full pt-1 z-30 w-56">
@@ -483,7 +483,7 @@ tailwind.config = {
   </div>
 </div>
 
-<!-- ========== 移动端导航抽屉（< 768px） ========== -->
+<!-- ========== 导航抽屉（桌面 + 移动端通用） ========== -->
 <div id="mobileMenu" class="hidden fixed inset-0 z-50 bg-white dark:bg-[#0d1117] overflow-y-auto">
   <div class="flex items-center justify-between px-4 h-16 border-b border-gh-200 dark:border-[#30363d] bg-[#24292f] dark:bg-[#010409]">
     <a href="#" class="learnable flex items-center gap-2 text-white" data-learnable="logo">
