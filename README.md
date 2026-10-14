@@ -69,7 +69,6 @@ github-guide/
 ### 下一轮候选
 - [ ] 任务重置 / 回放
 - [ ] 真实 GitHub 仓库链接对照
-- [ ] 国际化
 
 ## License
 
